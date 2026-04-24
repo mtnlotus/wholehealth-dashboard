@@ -1,0 +1,11 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/assets/*"]
+  },
+  "routes": [
+    { "route": "/launch", "rewrite": "/index.html" },
+    { "route": "/callback", "rewrite": "/index.html" },
+    { "route": "/auth/azure-callback", "rewrite": "/index.html" }
+  ]
+}
