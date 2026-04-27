@@ -30,7 +30,7 @@ jobs:
 
       - name: Install, build, and test
         run: |
-          pnpm install
+          pnpm install --no-frozen-lockfile
           pnpm run build
           pnpm run test --if-present
 
