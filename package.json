@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:integration": "vitest run --include 'test/**/*.integration.test.ts'",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src test",
     "lint:fix": "biome check --write src test",
