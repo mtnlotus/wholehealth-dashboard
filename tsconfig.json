@@ -11,10 +11,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "baseUrl": ".",
-    "paths": {
-      "coach-skills": ["../coach-skills/src/index.ts"]
-    }
+    "baseUrl": "."
   },
   "include": ["src", "test"],
   "exclude": ["node_modules", "dist"]

@@ -1,13 +1,16 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "node:path";
+import fs from "node:fs";
+
+const localCoachSkills = path.resolve(__dirname, "../coach-skills/src/index.ts");
 
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: {
-      "coach-skills": path.resolve(__dirname, "../coach-skills/src/index.ts"),
-    },
+    alias: fs.existsSync(localCoachSkills)
+      ? { "coach-skills": localCoachSkills }
+      : {},
   },
   define: {
     global: "globalThis",
