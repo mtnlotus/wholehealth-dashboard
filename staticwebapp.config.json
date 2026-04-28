@@ -1,11 +1,18 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/assets/*"]
+    "exclude": ["/assets/*", "*.js", "*.mjs", "*.css", "*.png", "*.svg", "*.ico", "*.json", "*.map"]
+  },
+  "mimeTypes": {
+    ".js": "text/javascript",
+    ".mjs": "text/javascript"
   },
   "routes": [
     { "route": "/launch", "rewrite": "/index.html" },
     { "route": "/callback", "rewrite": "/index.html" },
     { "route": "/auth/azure-callback", "rewrite": "/index.html" }
-  ]
+  ],
+  "globalHeaders": {
+    "Cache-Control": "no-cache"
+  }
 }
