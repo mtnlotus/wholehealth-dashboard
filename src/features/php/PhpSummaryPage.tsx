@@ -1,6 +1,6 @@
 import { useAppStore } from "../../store/appStore";
 import { WbsDisplay } from "./WbsDisplay";
-import { GoalList } from "./GoalList";
+import { GoalList, ActionStepList } from "./GoalList";
 
 export function PhpSummaryPage() {
   const phpData = useAppStore((s) => s.phpData);
@@ -31,8 +31,15 @@ export function PhpSummaryPage() {
 
       {phpData.goals.length > 0 && (
         <section>
-          <h3>Goals</h3>
+          <h3>Long-Term Goals</h3>
           <GoalList goals={phpData.goals} />
+        </section>
+      )}
+
+      {phpData.goals.some((g) => g.goal_type === "short-term") && (
+        <section>
+          <h3>Short-Term Goals</h3>
+          <ActionStepList goals={phpData.goals} />
         </section>
       )}
     </div>
