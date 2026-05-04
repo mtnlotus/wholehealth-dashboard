@@ -15,10 +15,10 @@ export function PhpSummaryPage() {
     <div>
       <h2>Personal Health Plan — {name}</h2>
 
-      {phpData.what_matters_most && (
+      {phpData.map && (
         <section>
-          <h3>What Matters Most</h3>
-          <p>{phpData.what_matters_most}</p>
+          <h3>Mission, Aspiration, Purpose (MAP)</h3>
+          <p style={{ whiteSpace: "pre-wrap" }}>{phpData.map}</p>
         </section>
       )}
 
