@@ -50,14 +50,13 @@ export async function readDocxBuffer(buffer: ArrayBuffer): Promise<string[]> {
 
   const paragraphs = body["w:p"] ?? [];
   const paras = Array.isArray(paragraphs) ? paragraphs : [paragraphs];
-  return paras.map(extractParagraphText).filter((line) => line.trim().length > 0);
+  return paras.map(extractParagraphText);
 }
 
 export function readTextContent(text: string): string[] {
   return text
     .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
+    .map((line) => line.trim());
 }
 
 export async function readFileInput(file: File): Promise<string[]> {
