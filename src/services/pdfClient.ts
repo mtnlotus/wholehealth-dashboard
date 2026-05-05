@@ -1,4 +1,4 @@
-import type { PhpData } from "coach-skills";
+import type { PhpData } from "coach-notes";
 
 export async function generatePdf(
   phpData: PhpData,

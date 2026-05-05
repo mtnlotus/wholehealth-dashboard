@@ -3,13 +3,13 @@ import react from "@vitejs/plugin-react";
 import path from "node:path";
 import fs from "node:fs";
 
-const localCoachSkills = path.resolve(__dirname, "../coach-skills/src/index.ts");
+const localCoachNotes = path.resolve(__dirname, "../coach-notes/src/index.ts");
 
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: fs.existsSync(localCoachSkills)
-      ? { "coach-skills": localCoachSkills }
+    alias: fs.existsSync(localCoachNotes)
+      ? { "coach-notes": localCoachNotes }
       : {},
   },
   define: {

@@ -1,4 +1,4 @@
-import type { WbsAssessment } from "coach-skills";
+import type { WbsAssessment } from "coach-notes";
 
 interface Props {
   wbs: WbsAssessment;

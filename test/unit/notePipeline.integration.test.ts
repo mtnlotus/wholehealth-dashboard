@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { readTextContent } from "../../src/lib/docxReaderBrowser";
 import { processNotes, processSingleNote } from "../../src/lib/noteProcessingPipeline";
 
-const NOTES_DIR = resolve(__dirname, "../../../coach-skills/clinical-notes/plain-text");
+const NOTES_DIR = resolve(__dirname, "../../../coach-notes/clinical-notes/plain-text");
 
 function loadNote(filename: string): string[] {
   const text = readFileSync(resolve(NOTES_DIR, filename), "utf-8");

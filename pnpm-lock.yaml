@@ -20,9 +20,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.100.9
         version: 5.100.9(react@19.2.5)
-      coach-skills:
-        specifier: github:mtnlotus/coach-skills
-        version: https://codeload.github.com/mtnlotus/coach-skills/tar.gz/52fe5d40eb6805c9f9962124dd0579f0631956a1
+      coach-notes:
+        specifier: github:mtnlotus/coach-notes
+        version: https://codeload.github.com/mtnlotus/coach-notes/tar.gz/8904c2cfb6270c777bfb7c34a2b94039e1b126cf
       fast-xml-parser:
         specifier: ^5.7.2
         version: 5.7.2
@@ -1650,8 +1650,8 @@ packages:
     resolution: {integrity: sha512-3Pe/CF1Nn94hyhIYpjtiLhdCoEoz0DqQ+988E9gmeEdQZlojxnOb74wctFyuwWQHzqyf9X7C7MG8juUpqBJT8w==}
     engines: {node: '>=0.8'}
 
-  coach-skills@https://codeload.github.com/mtnlotus/coach-skills/tar.gz/52fe5d40eb6805c9f9962124dd0579f0631956a1:
-    resolution: {tarball: https://codeload.github.com/mtnlotus/coach-skills/tar.gz/52fe5d40eb6805c9f9962124dd0579f0631956a1}
+  coach-notes@https://codeload.github.com/mtnlotus/coach-notes/tar.gz/8904c2cfb6270c777bfb7c34a2b94039e1b126cf:
+    resolution: {tarball: https://codeload.github.com/mtnlotus/coach-notes/tar.gz/8904c2cfb6270c777bfb7c34a2b94039e1b126cf}
     version: 1.0.0
 
   color-convert@1.9.3:
@@ -5653,7 +5653,7 @@ snapshots:
 
   clone@2.1.2: {}
 
-  coach-skills@https://codeload.github.com/mtnlotus/coach-skills/tar.gz/52fe5d40eb6805c9f9962124dd0579f0631956a1:
+  coach-notes@https://codeload.github.com/mtnlotus/coach-notes/tar.gz/8904c2cfb6270c777bfb7c34a2b94039e1b126cf:
     dependencies:
       '@smile-cdr/fhirts': 2.3.0
       commander: 14.0.3

@@ -1,4 +1,4 @@
-import type { Goal } from "coach-skills";
+import type { Goal } from "coach-notes";
 
 interface Props {
   goals: Goal[];

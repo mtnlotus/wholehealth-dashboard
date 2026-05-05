@@ -5,8 +5,8 @@ import {
   rawNoteToPhpData,
   buildBundle,
   buildBundleFromNotes,
-} from "coach-skills";
-import type { PhpData } from "coach-skills";
+} from "coach-notes";
+import type { PhpData } from "coach-notes";
 import type { fhirR4 } from "@smile-cdr/fhirts";
 
 export interface ParsedNoteResult {

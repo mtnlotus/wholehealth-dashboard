@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { useMsal } from "@azure/msal-react";
-import type { PhpData } from "coach-skills";
+import type { PhpData } from "coach-notes";
 import { generatePdf } from "../services/pdfClient";
 
 export function useGeneratePDF() {

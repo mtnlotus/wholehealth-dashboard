@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type Client from "fhirclient/lib/Client";
-import type { PhpData } from "coach-skills";
+import type { PhpData } from "coach-notes";
 import type { fhirR4 } from "@smile-cdr/fhirts";
 
 export type LaunchMode = "smart" | "standalone" | null;
