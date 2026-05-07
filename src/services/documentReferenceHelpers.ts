@@ -67,7 +67,12 @@ export async function fetchNoteContent(
       const buffer = await fhirRequest<ArrayBuffer>(client, attachment.url);
       return readAttachment(contentType, buffer);
     }
-    const text = await fhirRequest<string>(client, attachment.url);
+    const response = await fhirRequest<string | { data?: string }>(client, attachment.url);
+    const text = typeof response === "string"
+      ? response
+      : response.data
+        ? atob(response.data)
+        : "";
     return readTextContent(text);
   }
 
@@ -76,7 +81,10 @@ export async function fetchNoteContent(
 
 /** Fetch a Binary resource by URL and return its text content. */
 export async function fetchBinaryText(url: string, client: Client): Promise<string> {
-  return fhirRequest<string>(client, url);
+  const response = await fhirRequest<string | { data?: string }>(client, url);
+  if (typeof response === "string") return response;
+  if (response.data) return atob(response.data);
+  throw new Error("Binary resource has no data");
 }
 
 function isDocx(contentType: string): boolean {
