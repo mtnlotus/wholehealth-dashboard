@@ -2,3 +2,7 @@ onlyBuiltDependencies:
   - "@biomejs/biome"
   - core-js
   - esbuild
+allowBuilds:
+  "@biomejs/biome": true
+  core-js: true
+  esbuild: true
