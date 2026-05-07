@@ -5,7 +5,7 @@ import { useAppStore } from "../../store/appStore";
 import { useDocumentReferences } from "../../hooks/useDocumentReferences";
 import { useSmartClient } from "../../hooks/useSmartClient";
 import { useBinaryContent } from "../../hooks/useBinaryContent";
-import { extractNoteMetadata, fetchNoteContent } from "../../services/documentReferenceHelpers";
+import { extractNoteMetadata, fetchNoteContent, selectAttachment } from "../../services/documentReferenceHelpers";
 import { processNotes } from "../../lib/noteProcessingPipeline";
 import { fhirRequest } from "../../lib/fhirRequest";
 import { FileUploadFallback } from "./FileUploadFallback";
@@ -131,7 +131,7 @@ export function NoteListPage() {
                 const meta = extractNoteMetadata(dr);
                 const id = dr.id ?? "";
                 const checked = selectedIds.has(id);
-                const att = dr.content?.[0]?.attachment;
+                const att = selectAttachment(dr);
                 const attachUrl = att?.url;
                 const contentKey = attachUrl ?? (att?.data && id ? `embedded:${id}` : undefined);
                 const isViewVisible = contentKey ? binary.isVisible(contentKey) : false;

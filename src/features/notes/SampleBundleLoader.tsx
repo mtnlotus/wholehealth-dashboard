@@ -1,5 +1,6 @@
 import type { fhirR4 } from "@smile-cdr/fhirts";
 import { useAppStore } from "../../store/appStore";
+import { selectAttachment } from "../../services/documentReferenceHelpers";
 
 interface Props {
   onLoaded?: () => void;
@@ -32,7 +33,7 @@ export function SampleBundleLoader({ onLoaded }: Props) {
           const docRef = docRefs.find((dr) =>
             dr.content?.some((c) => c.attachment?.url?.endsWith(`/Binary/${binary.id}`)),
           );
-          const key = docRef?.content?.[0]?.attachment?.url ?? `Binary/${binary.id}`;
+          const key = selectAttachment(docRef!)?.url ?? `Binary/${binary.id}`;
           binaryCache[key] = atob(binary.data);
         }
       }
@@ -40,7 +41,7 @@ export function SampleBundleLoader({ onLoaded }: Props) {
 
     // DocumentReferences with embedded inline data — keyed as "embedded:{id}"
     for (const dr of docRefs) {
-      const att = dr.content?.[0]?.attachment;
+      const att = selectAttachment(dr);
       if (att?.data && !att.url && dr.id) {
         binaryCache[`embedded:${dr.id}`] = atob(att.data);
       }

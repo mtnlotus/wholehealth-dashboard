@@ -12,6 +12,30 @@ export interface NoteMetadata {
   hasInlineData: boolean;
 }
 
+const CONTENT_TYPE_PRIORITY = [
+  "text/plain",
+  "text/html",
+  "text/rtf",
+  "application/xml",
+  "application/pdf",
+];
+
+/**
+ * Select the best content item from a DocumentReference based on preferred
+ * content type order. Falls back to the first item if none match.
+ */
+export function selectAttachment(
+  dr: fhirR4.DocumentReference,
+): fhirR4.Attachment | undefined {
+  const items = dr.content ?? [];
+  if (items.length === 0) return undefined;
+  for (const preferred of CONTENT_TYPE_PRIORITY) {
+    const match = items.find((c) => c.attachment?.contentType?.startsWith(preferred));
+    if (match) return match.attachment;
+  }
+  return items[0].attachment;
+}
+
 function toDateString(value: string | Date | undefined): string | undefined {
   if (!value) return undefined;
   const s = typeof value === "string" ? value : value.toISOString();
@@ -19,11 +43,11 @@ function toDateString(value: string | Date | undefined): string | undefined {
 }
 
 export function extractNoteMetadata(dr: fhirR4.DocumentReference): NoteMetadata {
-  const attachment = dr.content?.[0]?.attachment;
+  const attachment = selectAttachment(dr);
   const date =
     toDateString(dr.context?.period?.start) ??
     toDateString(dr.date) ??
-    toDateString(dr.content?.[0]?.attachment?.creation);
+    toDateString(attachment?.creation);
   const title =
     attachment?.title ??
     dr.description ??
@@ -43,7 +67,7 @@ export async function fetchNoteContent(
   client: Client | null,
   binaryCache?: Record<string, string>,
 ): Promise<string[]> {
-  const attachment = dr.content?.[0]?.attachment;
+  const attachment = selectAttachment(dr);
   if (!attachment) return [];
 
   const contentType = attachment.contentType ?? "text/plain";
