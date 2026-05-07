@@ -1,1 +1,4 @@
-onlyBuiltDependencies: []
+onlyBuiltDependencies:
+  - "@biomejs/biome"
+  - core-js
+  - esbuild
