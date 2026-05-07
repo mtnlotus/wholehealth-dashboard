@@ -14,8 +14,18 @@ export interface ParsedNoteResult {
   fhirBundle: fhirR4.Bundle;
 }
 
-export function processNotes(paragraphSets: string[][], sessionDate?: string): ParsedNoteResult {
-  const rawNotes = paragraphSets.map((paras) => new NoteParser(paras).parse());
+export function processNotes(
+  paragraphSets: string[][],
+  sessionDate?: string,
+  noteDates?: (string | undefined)[],
+): ParsedNoteResult {
+  const rawNotes = paragraphSets.map((paras, i) => {
+    const note = new NoteParser(paras).parse();
+    // Per-note date from DocRef metadata takes priority over date parsed from note body
+    const externalDate = noteDates?.[i];
+    if (externalDate) note.session_date = externalDate;
+    return note;
+  });
   const sorted = sortNotes(rawNotes);
   const phpNotes = sorted.map(rawNoteToPhpData);
   const phpData = mergeNotes(sorted);

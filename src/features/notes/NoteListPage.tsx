@@ -7,6 +7,7 @@ import { useSmartClient } from "../../hooks/useSmartClient";
 import { useBinaryContent } from "../../hooks/useBinaryContent";
 import { extractNoteMetadata, fetchNoteContent } from "../../services/documentReferenceHelpers";
 import { processNotes } from "../../lib/noteProcessingPipeline";
+import { fhirRequest } from "../../lib/fhirRequest";
 import { FileUploadFallback } from "./FileUploadFallback";
 import { SampleBundleLoader } from "./SampleBundleLoader";
 
@@ -52,8 +53,33 @@ export function NoteListPage() {
       const paragraphSets = await Promise.all(
         selectedNotes.map((dr) => fetchNoteContent(dr, client, binaryCache)),
       );
+      // Extract YYYY-MM-DD date from each DocRef — context.period.start is preferred,
+      // falling back to dr.date then attachment.creation
+      const noteDates = selectedNotes.map((dr) => {
+        const raw = dr.context?.period?.start ?? dr.date ?? dr.content?.[0]?.attachment?.creation;
+        return raw ? String(raw).slice(0, 10) : undefined;
+      });
       const today = new Date().toISOString().split("T")[0];
-      const { phpData, fhirBundle } = processNotes(paragraphSets, today);
+      const { phpData, fhirBundle } = processNotes(paragraphSets, today, noteDates);
+
+      // In SMART mode, use the EHR Patient resource as the authoritative source
+      // for patient name and birth date, overriding whatever was parsed from notes.
+      if (client && patientId) {
+        try {
+          const pt = await fhirRequest<fhirR4.Patient>(client, `Patient/${patientId}`);
+          const name = pt.name?.[0];
+          if (name) {
+            phpData.patient = {
+              family: name.family ?? "",
+              given: name.given ?? [],
+              birth_date: pt.birthDate,
+            };
+          }
+        } catch {
+          // Non-fatal — parsed patient name (if any) remains
+        }
+      }
+
       setPhpData(phpData);
       setFhirBundle(fhirBundle);
       navigate("/app/php");

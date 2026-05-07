@@ -1,6 +1,7 @@
 import type Client from "fhirclient/lib/Client";
 import type { fhirR4 } from "@smile-cdr/fhirts";
 import { readAttachment, readTextContent } from "../lib/docxReaderBrowser";
+import { fhirRequest } from "../lib/fhirRequest";
 
 export interface NoteMetadata {
   id: string;
@@ -20,7 +21,9 @@ function toDateString(value: string | Date | undefined): string | undefined {
 export function extractNoteMetadata(dr: fhirR4.DocumentReference): NoteMetadata {
   const attachment = dr.content?.[0]?.attachment;
   const date =
-    toDateString(dr.date) ?? toDateString(dr.content?.[0]?.attachment?.creation);
+    toDateString(dr.context?.period?.start) ??
+    toDateString(dr.date) ??
+    toDateString(dr.content?.[0]?.attachment?.creation);
   const title =
     attachment?.title ??
     dr.description ??
@@ -61,10 +64,10 @@ export async function fetchNoteContent(
     if (cached !== undefined) return readTextContent(cached);
     if (!client) throw new Error("FHIR client required to fetch URL-referenced content");
     if (isDocx(contentType)) {
-      const buffer = await client.request<ArrayBuffer>(attachment.url);
+      const buffer = await fhirRequest<ArrayBuffer>(client, attachment.url);
       return readAttachment(contentType, buffer);
     }
-    const text = await client.request<string>(attachment.url);
+    const text = await fhirRequest<string>(client, attachment.url);
     return readTextContent(text);
   }
 
@@ -73,7 +76,7 @@ export async function fetchNoteContent(
 
 /** Fetch a Binary resource by URL and return its text content. */
 export async function fetchBinaryText(url: string, client: Client): Promise<string> {
-  return client.request<string>(url);
+  return fhirRequest<string>(client, url);
 }
 
 function isDocx(contentType: string): boolean {

@@ -11,9 +11,16 @@ export function PhpSummaryPage() {
     ? `${phpData.patient.given.join(" ")} ${phpData.patient.family}`
     : "Unknown Patient";
 
+  const birthDate = phpData.patient?.birth_date;
+
   return (
     <div>
       <h2>Personal Health Plan — {name}</h2>
+      {birthDate && (
+        <p style={{ margin: "0 0 1rem", color: "#555", fontSize: "0.9rem" }}>
+          Date of Birth: {birthDate}
+        </p>
+      )}
 
       {phpData.map && (
         <section>
