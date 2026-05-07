@@ -1,4 +1,1 @@
-onlyBuiltDependencies:
-  - "coach-notes"
-allowBuilds:
-  coach-notes: true
+onlyBuiltDependencies: []

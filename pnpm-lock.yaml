@@ -22,7 +22,7 @@ importers:
         version: 5.100.9(react@19.2.5)
       coach-notes:
         specifier: github:mtnlotus/coach-notes
-        version: https://codeload.github.com/mtnlotus/coach-notes/tar.gz/9acf789c4b2abdf572d4860483fe7e80b77df3e2
+        version: https://codeload.github.com/mtnlotus/coach-notes/tar.gz/0a7175ebebc76335b6ea6e3b0d986191b2c6390b
       fast-xml-parser:
         specifier: ^5.7.2
         version: 5.7.2
@@ -1650,8 +1650,8 @@ packages:
     resolution: {integrity: sha512-3Pe/CF1Nn94hyhIYpjtiLhdCoEoz0DqQ+988E9gmeEdQZlojxnOb74wctFyuwWQHzqyf9X7C7MG8juUpqBJT8w==}
     engines: {node: '>=0.8'}
 
-  coach-notes@https://codeload.github.com/mtnlotus/coach-notes/tar.gz/9acf789c4b2abdf572d4860483fe7e80b77df3e2:
-    resolution: {tarball: https://codeload.github.com/mtnlotus/coach-notes/tar.gz/9acf789c4b2abdf572d4860483fe7e80b77df3e2}
+  coach-notes@https://codeload.github.com/mtnlotus/coach-notes/tar.gz/0a7175ebebc76335b6ea6e3b0d986191b2c6390b:
+    resolution: {tarball: https://codeload.github.com/mtnlotus/coach-notes/tar.gz/0a7175ebebc76335b6ea6e3b0d986191b2c6390b}
     version: 1.0.0
 
   color-convert@1.9.3:
@@ -5653,7 +5653,7 @@ snapshots:
 
   clone@2.1.2: {}
 
-  coach-notes@https://codeload.github.com/mtnlotus/coach-notes/tar.gz/9acf789c4b2abdf572d4860483fe7e80b77df3e2:
+  coach-notes@https://codeload.github.com/mtnlotus/coach-notes/tar.gz/0a7175ebebc76335b6ea6e3b0d986191b2c6390b:
     dependencies:
       '@smile-cdr/fhirts': 2.3.0
       commander: 14.0.3
