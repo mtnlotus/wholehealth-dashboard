@@ -20,7 +20,13 @@ export function useDocumentReferences(patientId: string | undefined) {
       );
       return (bundle.entry ?? [])
         .map((e) => e.resource)
-        .filter((r): r is fhirR4.DocumentReference => !!r);
+        .filter((r): r is fhirR4.DocumentReference => !!r)
+        .filter((r) => r.status === "current" && r.docStatus === "final")
+        .sort((a, b) => {
+          const dateA = String(a.context?.period?.start ?? a.date ?? "");
+          const dateB = String(b.context?.period?.start ?? b.date ?? "");
+          return dateB.localeCompare(dateA);
+        });
     },
   });
 }
