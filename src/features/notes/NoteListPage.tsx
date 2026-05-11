@@ -30,7 +30,7 @@ export function NoteListPage() {
   const binary = useBinaryContent();
 
   // Determine which list of notes to show
-  const isSmartMode = launchMode === "smart";
+  const isSmartMode = launchMode === "smart" || launchMode === "patient";
   const notes: fhirR4.DocumentReference[] = isSmartMode
     ? (ehrNotes ?? [])
     : standaloneDocRefs;

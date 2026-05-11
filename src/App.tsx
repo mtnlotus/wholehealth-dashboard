@@ -3,6 +3,7 @@ import { LaunchPage } from "./pages/LaunchPage";
 import { CallbackPage } from "./pages/CallbackPage";
 import { AzureCallbackPage } from "./pages/AzureCallbackPage";
 import { StandalonePage } from "./pages/StandalonePage";
+import { PatientLaunchPage } from "./pages/PatientLaunchPage";
 import { PhpSummaryPage } from "./features/php/PhpSummaryPage";
 import { NoteListPage } from "./features/notes/NoteListPage";
 import { SharingPage } from "./features/sharing/SharingPage";
@@ -14,6 +15,7 @@ export function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/launch" element={<LaunchPage />} />
+          <Route path="/patient" element={<PatientLaunchPage />} />
           <Route path="/callback" element={<CallbackPage />} />
           <Route path="/auth/azure-callback" element={<AzureCallbackPage />} />
           <Route path="/" element={<StandalonePage />} />

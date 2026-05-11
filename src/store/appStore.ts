@@ -3,7 +3,7 @@ import type Client from "fhirclient/lib/Client";
 import type { PhpData } from "coach-notes";
 import type { fhirR4 } from "@smile-cdr/fhirts";
 
-export type LaunchMode = "smart" | "standalone" | null;
+export type LaunchMode = "smart" | "patient" | "standalone" | null;
 
 interface AppState {
   launchMode: LaunchMode;

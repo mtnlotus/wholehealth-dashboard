@@ -24,6 +24,7 @@
     "coach-notes": "github:mtnlotus/coach-notes",
     "fast-xml-parser": "^5.7.2",
     "fhirclient": "^2.6.3",
+    "jose": "^6.2.3",
     "pizzip": "^3.2.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
