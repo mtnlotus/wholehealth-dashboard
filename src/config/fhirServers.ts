@@ -1,8 +1,12 @@
+export const DEFAULT_SMART_SCOPE =
+  "launch openid fhirUser patient/Patient.read patient/DocumentReference.read patient/Binary.read patient/Goal.read";
+
 export interface FhirServerConfig {
   iss: string;
   clientId: string;
   label: string;
   clientSecret?: string;
+  scope?: string;
 }
 
 export const FHIR_SERVERS: FhirServerConfig[] = [
@@ -10,6 +14,7 @@ export const FHIR_SERVERS: FhirServerConfig[] = [
     iss: "https://sandbox-api.va.gov/services/fhir/v0/r4",
     clientId: "0oa1b48zszuAMvJhd2p8",
     clientSecret: "REDACTED-ROTATED-SECRET",
+    scope: "launch openid fhirUser patient/Patient.read patient/DocumentReference.read patient/Binary.read",
     label: "VA Sandbox",
   },
   {
@@ -35,4 +40,10 @@ export function clientIdForIss(iss: string): string {
 export function clientSecretForIss(iss: string): string | undefined {
   const normalized = iss.replace(/\/$/, "");
   return FHIR_SERVERS.find((s) => s.iss === normalized)?.clientSecret;
+}
+
+/** Return the SMART scope for a given ISS, falling back to DEFAULT_SMART_SCOPE. */
+export function scopeForIss(iss: string): string {
+  const normalized = iss.replace(/\/$/, "");
+  return FHIR_SERVERS.find((s) => s.iss === normalized)?.scope ?? DEFAULT_SMART_SCOPE;
 }

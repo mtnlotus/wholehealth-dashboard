@@ -1,5 +1,5 @@
 import FHIR from "fhirclient";
-import { clientIdForIss } from "../config/fhirServers";
+import { clientIdForIss, scopeForIss } from "../config/fhirServers";
 
 export async function smartLaunch(): Promise<void> {
   const iss =
@@ -8,7 +8,7 @@ export async function smartLaunch(): Promise<void> {
     "";
   await FHIR.oauth2.authorize({
     client_id: clientIdForIss(iss),
-    scope: "launch patient/Patient.read patient/DocumentReference.read patient/Binary.read patient/Goal.read openid fhirUser",
+    scope: scopeForIss(iss),
     redirect_uri: `${window.location.origin}/callback`,
   });
 }
