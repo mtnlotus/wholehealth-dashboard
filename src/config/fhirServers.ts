@@ -14,7 +14,7 @@ export const FHIR_SERVERS: FhirServerConfig[] = [
     iss: "https://sandbox-api.va.gov/services/fhir/v0/r4",
     clientId: "0oa1b48zszuAMvJhd2p8",
     clientSecret: "REDACTED-ROTATED-SECRET",
-    scope: "launch openid fhirUser patient/Patient.read patient/DocumentReference.read patient/Binary.read",
+    scope: "launch/patient openid profile patient/Patient.read patient/DocumentReference.read patient/Binary.read",
     label: "VA Sandbox",
   },
   {
