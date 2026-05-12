@@ -7,7 +7,7 @@ export interface FhirServerConfig {
 export const FHIR_SERVERS: FhirServerConfig[] = [
   {
     iss: "https://sandbox-api.va.gov/services/fhir/v0/r4",
-    clientId: "0oa18gyos5wfXeyyJ2p8",
+    clientId: "0oa1b43cyc1mp4Br52p8",
     label: "VA Sandbox",
   },
   {
@@ -24,6 +24,7 @@ export const FHIR_SERVERS: FhirServerConfig[] = [
 
 /** Return the client ID for a given ISS, falling back to the env default. */
 export function clientIdForIss(iss: string): string {
-  const match = FHIR_SERVERS.find((s) => s.iss === iss);
+  const normalized = iss.replace(/\/$/, "");
+  const match = FHIR_SERVERS.find((s) => s.iss === normalized);
   return match?.clientId ?? import.meta.env.VITE_SMART_CLIENT_ID;
 }
