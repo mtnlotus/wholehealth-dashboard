@@ -1,7 +1,7 @@
 import { importJWK, SignJWT, type JWK } from "jose";
 import FHIR from "fhirclient";
 import type Client from "fhirclient/lib/Client";
-import { clientIdForIss } from "../config/fhirServers";
+import { clientIdForIss, clientSecretForIss } from "../config/fhirServers";
 
 interface SmartConfiguration {
   token_endpoint: string;
@@ -56,15 +56,20 @@ export async function smartBackendLaunch(
   patientIdHint?: string,
 ): Promise<Client> {
   const clientId = clientIdForIss(iss);
+  const clientSecret = clientSecretForIss(iss);
   const tokenEndpoint = await discoverTokenEndpoint(iss);
-  const clientAssertion = await buildClientAssertion(clientId, tokenEndpoint);
 
-  const body = new URLSearchParams({
-    grant_type: "client_credentials",
-    client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
-    client_assertion: clientAssertion,
-    scope: "system/Patient.read system/DocumentReference.read system/Binary.read system/Goal.read",
-  });
+  const scope =
+    "system/Patient.read system/DocumentReference.read system/Binary.read system/Goal.read";
+
+  const body = clientSecret
+    ? new URLSearchParams({ grant_type: "client_credentials", client_id: clientId, client_secret: clientSecret, scope })
+    : new URLSearchParams({
+        grant_type: "client_credentials",
+        client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+        client_assertion: await buildClientAssertion(clientId, tokenEndpoint),
+        scope,
+      });
 
   const res = await fetch(tokenEndpoint, {
     method: "POST",
