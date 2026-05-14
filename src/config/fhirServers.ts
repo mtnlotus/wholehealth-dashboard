@@ -1,5 +1,5 @@
 export const DEFAULT_SMART_SCOPE =
-  "launch openid fhirUser patient/Patient.read patient/DocumentReference.read patient/Binary.read patient/Goal.read";
+  "launch openid fhirUser patient/Patient.read patient/DocumentReference.read patient/Binary.read patient/Goal.read patient/Condition.read patient/MedicationRequest.read";
 
 export interface FhirServerConfig {
   iss: string;
@@ -29,11 +29,20 @@ export const FHIR_SERVERS: FhirServerConfig[] = [
     clientId: "e5164fcc-f986-46ee-b923-9e21a92b88f9",
     label: "Oracle Sandbox",
   },
+  // Epic patient app
   {
     iss: "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4",
-    clientId: "79d0d7ce-949c-4b31-a962-9bc083a9197d",
+    clientId: "06f080fa-155c-40a9-b2bd-e4ccb9987b1a",
+    clientSecret: "REDACTED-ROTATED-SECRET",
     label: "Epic Sandbox",
   },
+  // Epic practitioner app
+  // {
+  //   iss: "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4",
+  //   clientId: "79d0d7ce-949c-4b31-a962-9bc083a9197d",
+  //   clientSecret: "REDACTED-ROTATED-SECRET",
+  //   label: "Epic Sandbox",
+  // },
 ];
 
 /** Return the client ID for a given ISS, falling back to the env default. */
