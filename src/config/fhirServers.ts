@@ -10,19 +10,20 @@ export interface FhirServerConfig {
 }
 
 export const FHIR_SERVERS: FhirServerConfig[] = [
-  // {
-  //   iss: "https://sandbox-api.va.gov/services/fhir/v0/r4",
-  //   clientId: "0oa1b48zszuAMvJhd2p8",
-  //   clientSecret: "REDACTED-ROTATED-SECRET",
-  //   scope: "launch/patient openid profile patient/Patient.read patient/DocumentReference.read patient/Binary.read patient/Condition.read patient/MedicationRequest.read",
-  //   label: "VA Sandbox",
-  // },
   {
     iss: "https://sandbox-api.va.gov/services/fhir/v0/r4",
-    clientId: "0oa1b43cyc1mp4Br52p8",
-    scope: "launch openid profile system/Patient.read system/DocumentReference.read system/Binary.read system/Condition.read system/MedicationRequest.read",
+    clientId: "0oa1b48zszuAMvJhd2p8",
+    clientSecret: "REDACTED-ROTATED-SECRET",
+    scope: "launch/patient openid profile fhirUser patient/Patient.read patient/DocumentReference.read patient/Binary.read patient/Condition.read patient/MedicationRequest.read",
     label: "VA Sandbox",
   },
+  // {"error":"invalid_request","error_description":"The redirect URI specified by the application does not match any of the registered redirect URIs. Erroneous redirect URI: https://proud-river-0fba33d1e.7.azurestaticapps.net/callback"}
+  // {
+  //   iss: "https://sandbox-api.va.gov/services/fhir/v0/r4",
+  //   clientId: "0oa1b43cyc1mp4Br52p8",
+  //   scope: "launch openid profile fhirUser user/Patient.read user/Practitioner.read user/DocumentReference.read user/Binary.read user/Condition.read user/MedicationRequest.read",
+  //   label: "VA Sandbox",
+  // },
   {
     iss: "https://fhir-myrecord.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d",
     clientId: "e5164fcc-f986-46ee-b923-9e21a92b88f9",
