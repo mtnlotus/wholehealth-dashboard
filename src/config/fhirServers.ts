@@ -10,11 +10,17 @@ export interface FhirServerConfig {
 }
 
 export const FHIR_SERVERS: FhirServerConfig[] = [
+  // {
+  //   iss: "https://sandbox-api.va.gov/services/fhir/v0/r4",
+  //   clientId: "0oa1b48zszuAMvJhd2p8",
+  //   clientSecret: "REDACTED-ROTATED-SECRET",
+  //   scope: "launch/patient openid profile patient/Patient.read patient/DocumentReference.read patient/Binary.read patient/Condition.read patient/MedicationRequest.read",
+  //   label: "VA Sandbox",
+  // },
   {
     iss: "https://sandbox-api.va.gov/services/fhir/v0/r4",
-    clientId: "0oa1b48zszuAMvJhd2p8",
-    clientSecret: "REDACTED-ROTATED-SECRET",
-    scope: "launch/patient openid profile patient/Patient.read patient/DocumentReference.read patient/Binary.read",
+    clientId: "0oa1b43cyc1mp4Br52p8",
+    scope: "launch openid profile system/Patient.read system/DocumentReference.read system/Binary.read system/Condition.read system/MedicationRequest.read",
     label: "VA Sandbox",
   },
   {
