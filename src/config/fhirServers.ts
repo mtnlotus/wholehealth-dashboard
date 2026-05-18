@@ -10,6 +10,7 @@ export interface FhirServerConfig {
 }
 
 export const FHIR_SERVERS: FhirServerConfig[] = [
+  // VA patient app
   {
     iss: "https://sandbox-api.va.gov/services/fhir/v0/r4",
     clientId: "0oa1b48zszuAMvJhd2p8",

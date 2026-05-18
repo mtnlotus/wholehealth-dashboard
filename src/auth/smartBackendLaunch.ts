@@ -1,7 +1,7 @@
 import { importJWK, SignJWT, type JWK } from "jose";
 import FHIR from "fhirclient";
 import type Client from "fhirclient/lib/Client";
-import { clientIdForIss, clientSecretForIss } from "../config/fhirServers";
+import { clientIdForIss, clientSecretForIss, scopeForIss } from "../config/fhirServers";
 
 interface SmartConfiguration {
   token_endpoint: string;
@@ -57,18 +57,16 @@ export async function smartBackendLaunch(
 ): Promise<Client> {
   const clientId = clientIdForIss(iss);
   const clientSecret = clientSecretForIss(iss);
+  const clientScope = scopeForIss(iss);
   const tokenEndpoint = await discoverTokenEndpoint(iss);
 
-  const scope =
-    "system/Patient.read system/DocumentReference.read system/Binary.read system/Goal.read";
-
   const body = clientSecret
-    ? new URLSearchParams({ grant_type: "client_credentials", client_id: clientId, client_secret: clientSecret, scope })
+    ? new URLSearchParams({ grant_type: "client_credentials", client_id: clientId, client_secret: clientSecret, clientScope })
     : new URLSearchParams({
         grant_type: "client_credentials",
         client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
         client_assertion: await buildClientAssertion(clientId, tokenEndpoint),
-        scope,
+        scope: clientScope,
       });
 
   const res = await fetch(tokenEndpoint, {
