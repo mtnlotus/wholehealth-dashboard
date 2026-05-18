@@ -1,11 +1,12 @@
 import FHIR from "fhirclient";
-import { clientIdForIss, scopeForIss } from "../config/fhirServers";
+import { clientIdForIss, clientSecretForIss, scopeForIss } from "../config/fhirServers";
 
 export async function smartPatientLaunch(iss: string): Promise<void> {
   await FHIR.oauth2.authorize({
-    client_id: clientIdForIss(iss),
+    clientId: clientIdForIss(iss),
+    clientSecret: clientSecretForIss(iss),
     iss,
     scope: scopeForIss(iss),
-    redirect_uri: `${window.location.origin}/callback`,
+    redirectUri: `${window.location.origin}/callback`,
   });
 }
