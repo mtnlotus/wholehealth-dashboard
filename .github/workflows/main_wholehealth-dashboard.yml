@@ -43,10 +43,11 @@ jobs:
         run: pnpm run build
         env:
           VITE_SMART_CLIENT_ID: ${{ secrets.VITE_SMART_CLIENT_ID }}
+          VITE_SMART_PRIVATE_KEY_JWK: ${{ secrets.VITE_SMART_PRIVATE_KEY_JWK }}
           VITE_SHC_CREATE_URL: ${{ secrets.VITE_SHC_CREATE_URL }}
           VITE_AZURE_CLIENT_ID: ${{ secrets.VITE_AZURE_CLIENT_ID }}
           VITE_AZURE_TENANT_ID: ${{ secrets.VITE_AZURE_TENANT_ID }}
-          VITE_AZURE_REDIRECT_URI: ${{ secrets.VITE_AZURE_REDIRECT_URI }}
+          VITE_AZURE_CLIENT_SECRET: ${{ secrets.VITE_AZURE_CLIENT_SECRET }}
           VITE_SHC_SCOPE: ${{ secrets.VITE_SHC_SCOPE }}
           VITE_PDF_FUNCTION_URL: ${{ secrets.VITE_PDF_FUNCTION_URL }}
 
