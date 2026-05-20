@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { smartPatientLaunch } from "../auth/smartPatientLaunch";
+import { smartLaunch } from "../auth/smartLaunch";
 import { FHIR_SERVERS } from "../config/fhirServers";
 
 const params = new URLSearchParams(window.location.search);
@@ -19,7 +19,7 @@ export function PatientLaunchPage() {
     setError(null);
     setLaunching(true);
     try {
-      await smartPatientLaunch(trimmed);
+      await smartLaunch(trimmed);
     } catch (err) {
       setError(String(err));
       setLaunching(false);

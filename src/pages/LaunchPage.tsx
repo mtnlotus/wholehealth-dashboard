@@ -3,8 +3,7 @@ import { useNavigate } from "react-router";
 import { useAppStore } from "../store/appStore";
 import { smartLaunch } from "../auth/smartLaunch";
 import { smartBackendLaunch } from "../auth/smartBackendLaunch";
-
-const USE_BACKEND_SERVICES = !!import.meta.env.VITE_SMART_PRIVATE_KEY_JWK;
+import { authFlowForIss } from "../config/fhirServers";
 
 export function LaunchPage() {
   const setSmartClient = useAppStore((s) => s.setSmartClient);
@@ -13,7 +12,10 @@ export function LaunchPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!USE_BACKEND_SERVICES) {
+    const params = new URLSearchParams(window.location.search);
+    const iss = params.get("iss") ?? import.meta.env.VITE_FHIR_ISS ?? "";
+
+    if (authFlowForIss(iss) === "code") {
       // Authorization Code flow — fhirclient reads iss/launch from the URL and
       // redirects to the EHR; CallbackPage handles the rest.
       smartLaunch().catch((err: unknown) => setError(String(err)));
@@ -22,8 +24,6 @@ export function LaunchPage() {
 
     // Client Credentials (SMART Backend Services) — token exchange happens
     // in-page; no EHR redirect needed.
-    const params = new URLSearchParams(window.location.search);
-    const iss = params.get("iss");
     if (!iss) {
       setError("Missing iss parameter in launch URL.");
       return;

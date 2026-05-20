@@ -25,7 +25,7 @@ async function discoverTokenEndpoint(iss: string): Promise<string> {
   return config.token_endpoint;
 }
 
-async function buildClientAssertion(clientId: string, tokenEndpoint: string): Promise<string> {
+export async function buildClientAssertion(clientId: string, tokenEndpoint: string): Promise<string> {
   const jwk = JSON.parse(import.meta.env.VITE_SMART_PRIVATE_KEY_JWK) as JWK;
   const alg = jwk.alg ?? "ES384";
   const privateKey = await importJWK(jwk, alg);
@@ -60,14 +60,20 @@ export async function smartBackendLaunch(
   const clientScope = scopeForIss(iss);
   const tokenEndpoint = await discoverTokenEndpoint(iss);
 
+  const launchPatient = patientIdHint ? '{"patient":"' + patientIdHint + '"}' : "";
+  const launchPatientEncoded = Buffer.from(launchPatient, "utf-8").toString("base64");
+
   const body = clientSecret
-    ? new URLSearchParams({ grant_type: "client_credentials", client_id: clientId, client_secret: clientSecret, clientScope })
+    ? new URLSearchParams({ grant_type: "client_credentials", client_id: clientId, client_secret: clientSecret, scope: clientScope, launch: launchPatientEncoded })
     : new URLSearchParams({
         grant_type: "client_credentials",
         client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
         client_assertion: await buildClientAssertion(clientId, tokenEndpoint),
         scope: clientScope,
+        launch: launchPatientEncoded,
       });
+
+  console.log("Requesting SMART token with body:", Object.fromEntries(body.entries()));
 
   const res = await fetch(tokenEndpoint, {
     method: "POST",
