@@ -1,5 +1,5 @@
-import { useState } from "react";
 import type Client from "fhirclient/lib/Client";
+import { useState } from "react";
 import { fetchBinaryText } from "../services/documentReferenceHelpers";
 import { useAppStore } from "../store/appStore";
 
@@ -19,7 +19,11 @@ export function useBinaryContent(): BinaryState {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [visible, setVisible] = useState<Record<string, boolean>>({});
 
-  async function fetchContent(key: string, client: Client | null, inlineData?: string): Promise<void> {
+  async function fetchContent(
+    key: string,
+    client: Client | null,
+    inlineData?: string,
+  ): Promise<void> {
     if (content[key] !== undefined) return;
 
     // Inline base64 data provided directly (embedded attachment or sample bundle cache)

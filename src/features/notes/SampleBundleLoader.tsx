@@ -1,6 +1,6 @@
 import type { fhirR4 } from "@smile-cdr/fhirts";
-import { useAppStore } from "../../store/appStore";
 import { selectAttachment } from "../../services/documentReferenceHelpers";
+import { useAppStore } from "../../store/appStore";
 
 interface Props {
   onLoaded?: () => void;

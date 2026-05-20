@@ -1,6 +1,6 @@
-import { importJWK, SignJWT, type JWK } from "jose";
 import FHIR from "fhirclient";
 import type Client from "fhirclient/lib/Client";
+import { type JWK, SignJWT, importJWK } from "jose";
 import { clientIdForIss, clientSecretForIss, scopeForIss } from "../config/fhirServers";
 
 interface SmartConfiguration {
@@ -25,7 +25,10 @@ async function discoverTokenEndpoint(iss: string): Promise<string> {
   return config.token_endpoint;
 }
 
-export async function buildClientAssertion(clientId: string, tokenEndpoint: string): Promise<string> {
+export async function buildClientAssertion(
+  clientId: string,
+  tokenEndpoint: string,
+): Promise<string> {
   const jwk = JSON.parse(import.meta.env.VITE_SMART_PRIVATE_KEY_JWK) as JWK;
   const alg = jwk.alg ?? "ES384";
   const privateKey = await importJWK(jwk, alg);
@@ -51,10 +54,7 @@ export async function buildClientAssertion(clientId: string, tokenEndpoint: stri
  * @param patientIdHint - patient ID from launch URL; used only when the EHR
  *   does not include `patient` in the token response
  */
-export async function smartBackendLaunch(
-  iss: string,
-  patientIdHint?: string,
-): Promise<Client> {
+export async function smartBackendLaunch(iss: string, patientIdHint?: string): Promise<Client> {
   const clientId = clientIdForIss(iss);
   const clientSecret = clientSecretForIss(iss);
   const clientScope = scopeForIss(iss);
@@ -64,7 +64,13 @@ export async function smartBackendLaunch(
   const launchPatientEncoded = Buffer.from(launchPatient, "utf-8").toString("base64");
 
   const body = clientSecret
-    ? new URLSearchParams({ grant_type: "client_credentials", client_id: clientId, client_secret: clientSecret, scope: clientScope, launch: launchPatientEncoded })
+    ? new URLSearchParams({
+        grant_type: "client_credentials",
+        client_id: clientId,
+        client_secret: clientSecret,
+        scope: clientScope,
+        launch: launchPatientEncoded,
+      })
     : new URLSearchParams({
         grant_type: "client_credentials",
         client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",

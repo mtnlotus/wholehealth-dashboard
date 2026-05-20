@@ -20,7 +20,9 @@ export function CallbackPage() {
         try {
           const parsed = state ? JSON.parse(state) : null;
           if (parsed && !parsed.launch) mode = "patient";
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
         setLaunchMode(mode);
         navigate("/app");
       })

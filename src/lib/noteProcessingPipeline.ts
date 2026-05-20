@@ -1,13 +1,13 @@
+import type { fhirR4 } from "@smile-cdr/fhirts";
 import {
   NoteParser,
-  mergeNotes,
-  sortNotes,
-  rawNoteToPhpData,
   buildBundle,
   buildBundleFromNotes,
+  mergeNotes,
+  rawNoteToPhpData,
+  sortNotes,
 } from "coach-notes";
 import type { PhpData } from "coach-notes";
-import type { fhirR4 } from "@smile-cdr/fhirts";
 
 export interface ParsedNoteResult {
   phpData: PhpData;

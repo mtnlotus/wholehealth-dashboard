@@ -10,7 +10,7 @@ export async function generatePdf(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${azureBearerToken}`,
+      Authorization: `Bearer ${azureBearerToken}`,
     },
     body: JSON.stringify({ phpData, reportDate }),
   });

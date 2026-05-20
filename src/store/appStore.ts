@@ -1,7 +1,7 @@
-import { create } from "zustand";
-import type Client from "fhirclient/lib/Client";
-import type { PhpData } from "coach-notes";
 import type { fhirR4 } from "@smile-cdr/fhirts";
+import type { PhpData } from "coach-notes";
+import type Client from "fhirclient/lib/Client";
+import { create } from "zustand";
 
 export type LaunchMode = "smart" | "patient" | "standalone" | null;
 
@@ -18,10 +18,7 @@ interface AppState {
   setSmartClient: (client: Client) => void;
   setPhpData: (data: PhpData) => void;
   setFhirBundle: (bundle: fhirR4.Bundle) => void;
-  setStandaloneBundle: (
-    refs: fhirR4.DocumentReference[],
-    cache: Record<string, string>,
-  ) => void;
+  setStandaloneBundle: (refs: fhirR4.DocumentReference[], cache: Record<string, string>) => void;
   reset: () => void;
 }
 
@@ -36,8 +33,7 @@ export const useAppStore = create<AppState>((set) => ({
   setSmartClient: (client) => set({ smartClient: client }),
   setPhpData: (data) => set({ phpData: data }),
   setFhirBundle: (bundle) => set({ fhirBundle: bundle }),
-  setStandaloneBundle: (refs, cache) =>
-    set({ standaloneDocRefs: refs, binaryCache: cache }),
+  setStandaloneBundle: (refs, cache) => set({ standaloneDocRefs: refs, binaryCache: cache }),
   reset: () =>
     set({
       launchMode: null,

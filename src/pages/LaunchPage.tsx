@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { useAppStore } from "../store/appStore";
-import { smartLaunch } from "../auth/smartLaunch";
 import { smartBackendLaunch } from "../auth/smartBackendLaunch";
+import { smartLaunch } from "../auth/smartLaunch";
 import { authFlowForIss } from "../config/fhirServers";
+import { useAppStore } from "../store/appStore";
 
 export function LaunchPage() {
   const setSmartClient = useAppStore((s) => s.setSmartClient);
@@ -15,10 +15,10 @@ export function LaunchPage() {
     const params = new URLSearchParams(window.location.search);
     const iss = params.get("iss") ?? import.meta.env.VITE_FHIR_ISS ?? "";
 
-    if (authFlowForIss(iss) === "code") {
+    if (authFlowForIss(iss, "practitioner") === "code") {
       // Authorization Code flow — fhirclient reads iss/launch from the URL and
       // redirects to the EHR; CallbackPage handles the rest.
-      smartLaunch().catch((err: unknown) => setError(String(err)));
+      smartLaunch(undefined, "practitioner").catch((err: unknown) => setError(String(err)));
       return;
     }
 

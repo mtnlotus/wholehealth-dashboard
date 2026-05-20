@@ -1,6 +1,6 @@
 import FHIR from "fhirclient";
 import type Client from "fhirclient/lib/Client";
-import { clientAuthMethodForIss } from "../config/fhirServers";
+import { clientAuthMethodForClientId } from "../config/fhirServers";
 import { buildClientAssertion } from "./smartBackendLaunch";
 
 // fhirclient stores state with mixed conventions — handle both forms defensively
@@ -30,7 +30,13 @@ async function jwtCodeExchange(state: StoredSmartState): Promise<Client> {
   const redirectUri = state.redirectUri ?? (state.redirect_uri as string | undefined) ?? "";
   const tokenUri = state.tokenUri ?? "";
 
-  console.log("[smartCallback] jwtCodeExchange state:", { serverUrl, clientId, redirectUri, tokenUri, hasCodeVerifier: !!state.codeVerifier });
+  console.log("[smartCallback] jwtCodeExchange state:", {
+    serverUrl,
+    clientId,
+    redirectUri,
+    tokenUri,
+    hasCodeVerifier: !!state.codeVerifier,
+  });
 
   if (!tokenUri) throw new Error("No tokenUri in stored SMART state — cannot build JWT audience");
   if (!clientId) throw new Error("No clientId in stored SMART state");
@@ -74,7 +80,8 @@ export async function smartCallback(): Promise<Client> {
       const state = JSON.parse(stored) as StoredSmartState;
       console.log("[smartCallback] stored SMART state keys:", Object.keys(state));
       const serverUrl = state.serverUrl ?? "";
-      if (serverUrl && clientAuthMethodForIss(serverUrl) === "jwt") {
+      const clientId = state.clientId ?? (state.client_id as string | undefined) ?? "";
+      if (serverUrl && clientAuthMethodForClientId(serverUrl, clientId) === "jwt") {
         return jwtCodeExchange(state);
       }
     }

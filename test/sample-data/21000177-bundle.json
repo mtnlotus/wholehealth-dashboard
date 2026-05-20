@@ -88,9 +88,7 @@
             "use": "usual",
             "text": "Mrs. Denise470 Betsey110 VonRueden376",
             "family": "VonRueden376",
-            "given": [
-              "Denise470"
-            ]
+            "given": ["Denise470"]
           }
         ],
         "telecom": [
@@ -105,9 +103,7 @@
         "deceasedBoolean": false,
         "address": [
           {
-            "line": [
-              "227 Bernier Stravenue Suite 38"
-            ],
+            "line": ["227 Bernier Stravenue Suite 38"],
             "city": "Hollywood",
             "state": "FL",
             "postalCode": "33023"
@@ -152,10 +148,7 @@
               }
             ],
             "address": {
-              "line": [
-                "76210 Stehr Causeway",
-                "Suite 315"
-              ],
+              "line": ["76210 Stehr Causeway", "Suite 315"],
               "city": "South Carleetown",
               "state": "TX",
               "postalCode": "42094"

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { smartLaunch } from "../auth/smartLaunch";
-import { FHIR_SERVERS } from "../config/fhirServers";
+import { serversForAppType } from "../config/fhirServers";
+
+const PATIENT_SERVERS = serversForAppType("patient");
 
 const params = new URLSearchParams(window.location.search);
 const DEFAULT_ISS = params.get("iss") ?? import.meta.env.VITE_FHIR_ISS ?? "";
@@ -19,7 +21,7 @@ export function PatientLaunchPage() {
     setError(null);
     setLaunching(true);
     try {
-      await smartLaunch(trimmed);
+      await smartLaunch(trimmed, "patient");
     } catch (err) {
       setError(String(err));
       setLaunching(false);
@@ -33,11 +35,11 @@ export function PatientLaunchPage() {
         Sign in with your health system to access your Personal Health Plan.
       </p>
 
-      {FHIR_SERVERS.length > 0 && (
+      {PATIENT_SERVERS.length > 0 && (
         <div style={{ marginBottom: "1.5rem" }}>
           <p style={{ fontWeight: 600, marginBottom: "0.5rem" }}>Select your health system:</p>
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-            {FHIR_SERVERS.map((server) => (
+            {PATIENT_SERVERS.map((server) => (
               <li key={server.iss} style={{ marginBottom: "0.5rem" }}>
                 <button
                   style={{
@@ -61,7 +63,10 @@ export function PatientLaunchPage() {
       )}
 
       <div style={{ marginBottom: "1rem" }}>
-        <label htmlFor="fhir-iss" style={{ display: "block", fontWeight: 600, marginBottom: "0.3rem" }}>
+        <label
+          htmlFor="fhir-iss"
+          style={{ display: "block", fontWeight: 600, marginBottom: "0.3rem" }}
+        >
           FHIR Server URL
         </label>
         <input

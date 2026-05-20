@@ -1,13 +1,17 @@
+import type { fhirR4 } from "@smile-cdr/fhirts";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import type { fhirR4 } from "@smile-cdr/fhirts";
-import { useAppStore } from "../../store/appStore";
+import { useBinaryContent } from "../../hooks/useBinaryContent";
 import { useDocumentReferences } from "../../hooks/useDocumentReferences";
 import { useSmartClient } from "../../hooks/useSmartClient";
-import { useBinaryContent } from "../../hooks/useBinaryContent";
-import { extractNoteMetadata, fetchNoteContent, selectAttachment } from "../../services/documentReferenceHelpers";
-import { processNotes } from "../../lib/noteProcessingPipeline";
 import { fhirRequest } from "../../lib/fhirRequest";
+import { processNotes } from "../../lib/noteProcessingPipeline";
+import {
+  extractNoteMetadata,
+  fetchNoteContent,
+  selectAttachment,
+} from "../../services/documentReferenceHelpers";
+import { useAppStore } from "../../store/appStore";
 import { FileUploadFallback } from "./FileUploadFallback";
 import { SampleBundleLoader } from "./SampleBundleLoader";
 
@@ -31,9 +35,7 @@ export function NoteListPage() {
 
   // Determine which list of notes to show
   const isSmartMode = launchMode === "smart" || launchMode === "patient";
-  const notes: fhirR4.DocumentReference[] = isSmartMode
-    ? (ehrNotes ?? [])
-    : standaloneDocRefs;
+  const notes: fhirR4.DocumentReference[] = isSmartMode ? (ehrNotes ?? []) : standaloneDocRefs;
 
   function toggleNote(id: string) {
     setSelectedIds((prev) => {
@@ -221,10 +223,7 @@ export function NoteListPage() {
           </table>
 
           <div style={{ marginTop: "1rem", display: "flex", gap: "0.75rem", alignItems: "center" }}>
-            <button
-              onClick={handleParseSelected}
-              disabled={selectedIds.size === 0 || parsing}
-            >
+            <button onClick={handleParseSelected} disabled={selectedIds.size === 0 || parsing}>
               {parsing
                 ? "Parsing…"
                 : `Parse ${selectedIds.size > 0 ? selectedIds.size : ""} Selected Note${selectedIds.size !== 1 ? "s" : ""}`}
@@ -245,7 +244,9 @@ export function NoteListPage() {
           <>
             <h3 style={{ marginTop: 0 }}>Load FHIR Bundle</h3>
             <SampleBundleLoader onLoaded={handleBundleLoaded} />
-            <div style={{ marginTop: "1.5rem", borderTop: "1px solid #e0e0e0", paddingTop: "1.5rem" }} />
+            <div
+              style={{ marginTop: "1.5rem", borderTop: "1px solid #e0e0e0", paddingTop: "1.5rem" }}
+            />
           </>
         )}
         <h3 style={{ marginTop: 0 }}>Upload Notes Manually</h3>

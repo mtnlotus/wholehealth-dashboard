@@ -1,5 +1,5 @@
-import type Client from "fhirclient/lib/Client";
 import type { fhirR4 } from "@smile-cdr/fhirts";
+import type Client from "fhirclient/lib/Client";
 import { readAttachment, readTextContent } from "../lib/docxReaderBrowser";
 import { fhirRequest } from "../lib/fhirRequest";
 
@@ -24,9 +24,7 @@ const CONTENT_TYPE_PRIORITY = [
  * Select the best content item from a DocumentReference based on preferred
  * content type order. Falls back to the first item if none match.
  */
-export function selectAttachment(
-  dr: fhirR4.DocumentReference,
-): fhirR4.Attachment | undefined {
+export function selectAttachment(dr: fhirR4.DocumentReference): fhirR4.Attachment | undefined {
   const items = dr.content ?? [];
   if (items.length === 0) return undefined;
   for (const preferred of CONTENT_TYPE_PRIORITY) {
@@ -48,10 +46,7 @@ export function extractNoteMetadata(dr: fhirR4.DocumentReference): NoteMetadata 
     toDateString(dr.context?.period?.start) ??
     toDateString(dr.date) ??
     toDateString(attachment?.creation);
-  const title =
-    attachment?.title ??
-    dr.description ??
-    (date ? `Note — ${date}` : "Untitled Note");
+  const title = attachment?.title ?? dr.description ?? (date ? `Note — ${date}` : "Untitled Note");
 
   return {
     id: dr.id ?? "",
@@ -92,11 +87,7 @@ export async function fetchNoteContent(
       return readAttachment(contentType, buffer);
     }
     const response = await fhirRequest<string | { data?: string }>(client, attachment.url);
-    const text = typeof response === "string"
-      ? response
-      : response.data
-        ? atob(response.data)
-        : "";
+    const text = typeof response === "string" ? response : response.data ? atob(response.data) : "";
     return readTextContent(text);
   }
 

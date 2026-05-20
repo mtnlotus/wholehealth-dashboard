@@ -1,7 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
 import type { fhirR4 } from "@smile-cdr/fhirts";
-import { useSmartClient } from "./useSmartClient";
+import { useQuery } from "@tanstack/react-query";
 import { fhirRequest } from "../lib/fhirRequest";
+import { useSmartClient } from "./useSmartClient";
 
 interface FhirSearchBundle {
   resourceType: "Bundle";

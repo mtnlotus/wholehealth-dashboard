@@ -13,7 +13,7 @@ export async function createSmartHealthCard(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${azureBearerToken}`,
+      Authorization: `Bearer ${azureBearerToken}`,
     },
     body: JSON.stringify({ fhirBundle }),
   });

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { processNotes, processSingleNote } from "../../src/lib/noteProcessingPipeline";
 
 const SAMPLE_PARAGRAPHS = [

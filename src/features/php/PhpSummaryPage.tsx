@@ -1,6 +1,6 @@
 import { useAppStore } from "../../store/appStore";
+import { ActionStepList, GoalList } from "./GoalList";
 import { WbsDisplay } from "./WbsDisplay";
-import { GoalList, ActionStepList } from "./GoalList";
 
 export function PhpSummaryPage() {
   const phpData = useAppStore((s) => s.phpData);

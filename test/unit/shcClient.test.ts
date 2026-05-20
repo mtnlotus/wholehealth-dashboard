@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createSmartHealthCard } from "../../src/services/shcClient";
 import type { fhirR4 } from "@smile-cdr/fhirts";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createSmartHealthCard } from "../../src/services/shcClient";
 
 const mockBundle: fhirR4.Bundle = {
   resourceType: "Bundle",

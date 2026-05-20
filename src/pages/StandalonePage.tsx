@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
-import { useAppStore } from "../store/appStore";
 import { FileUploadFallback } from "../features/notes/FileUploadFallback";
 import { SampleBundleLoader } from "../features/notes/SampleBundleLoader";
+import { useAppStore } from "../store/appStore";
 
 export function StandalonePage() {
   const setLaunchMode = useAppStore((s) => s.setLaunchMode);

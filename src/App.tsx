@@ -1,13 +1,13 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router";
-import { LaunchPage } from "./pages/LaunchPage";
-import { CallbackPage } from "./pages/CallbackPage";
-import { AzureCallbackPage } from "./pages/AzureCallbackPage";
-import { StandalonePage } from "./pages/StandalonePage";
-import { PatientLaunchPage } from "./pages/PatientLaunchPage";
-import { PhpSummaryPage } from "./features/php/PhpSummaryPage";
-import { NoteListPage } from "./features/notes/NoteListPage";
-import { SharingPage } from "./features/sharing/SharingPage";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { NoteListPage } from "./features/notes/NoteListPage";
+import { PhpSummaryPage } from "./features/php/PhpSummaryPage";
+import { SharingPage } from "./features/sharing/SharingPage";
+import { AzureCallbackPage } from "./pages/AzureCallbackPage";
+import { CallbackPage } from "./pages/CallbackPage";
+import { LaunchPage } from "./pages/LaunchPage";
+import { PatientLaunchPage } from "./pages/PatientLaunchPage";
+import { StandalonePage } from "./pages/StandalonePage";
 
 export function App() {
   return (

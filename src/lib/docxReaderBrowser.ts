@@ -1,5 +1,5 @@
-import PizZip from "pizzip";
 import { XMLParser } from "fast-xml-parser";
+import PizZip from "pizzip";
 
 const WORD_NAMESPACE = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
 
@@ -54,9 +54,7 @@ export async function readDocxBuffer(buffer: ArrayBuffer): Promise<string[]> {
 }
 
 export function readTextContent(text: string): string[] {
-  return text
-    .split(/\r?\n/)
-    .map((line) => line.trim());
+  return text.split(/\r?\n/).map((line) => line.trim());
 }
 
 export async function readFileInput(file: File): Promise<string[]> {
@@ -70,13 +68,9 @@ export async function readAttachment(
   contentType: string,
   data: ArrayBuffer | string,
 ): Promise<string[]> {
-  if (
-    contentType.includes("wordprocessingml") ||
-    contentType.includes("docx")
-  ) {
-    const buffer = typeof data === "string"
-      ? Uint8Array.from(atob(data), (c) => c.charCodeAt(0)).buffer
-      : data;
+  if (contentType.includes("wordprocessingml") || contentType.includes("docx")) {
+    const buffer =
+      typeof data === "string" ? Uint8Array.from(atob(data), (c) => c.charCodeAt(0)).buffer : data;
     return readDocxBuffer(buffer);
   }
   const text = typeof data === "string" ? data : new TextDecoder().decode(data);

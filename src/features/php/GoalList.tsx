@@ -17,15 +17,19 @@ function GoalCard({ goal }: { goal: Goal }) {
       {(goal.importance !== undefined || goal.confidence !== undefined) && (
         <div style={{ fontSize: "0.85rem", color: "#555", marginTop: "0.25rem" }}>
           {goal.importance !== undefined && <span>Importance: {goal.importance}/10</span>}
-          {goal.importance !== undefined && goal.confidence !== undefined && <span>  ·  </span>}
+          {goal.importance !== undefined && goal.confidence !== undefined && <span> · </span>}
           {goal.confidence !== undefined && <span>Confidence: {goal.confidence}/10</span>}
         </div>
       )}
       {goal.importance_note && (
-        <div style={{ fontSize: "0.8rem", color: "#777", marginTop: "0.15rem" }}>{goal.importance_note}</div>
+        <div style={{ fontSize: "0.8rem", color: "#777", marginTop: "0.15rem" }}>
+          {goal.importance_note}
+        </div>
       )}
       {goal.confidence_note && (
-        <div style={{ fontSize: "0.8rem", color: "#777", marginTop: "0.15rem" }}>{goal.confidence_note}</div>
+        <div style={{ fontSize: "0.8rem", color: "#777", marginTop: "0.15rem" }}>
+          {goal.confidence_note}
+        </div>
       )}
       {goal.goal_type === "short-term" && goal.lifecycle_status !== "active" && (
         <span

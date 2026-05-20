@@ -18,10 +18,12 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.error) {
-      return this.props.fallback ?? (
-        <div style={{ padding: "1rem", color: "red" }}>
-          Something went wrong: {this.state.error.message}
-        </div>
+      return (
+        this.props.fallback ?? (
+          <div style={{ padding: "1rem", color: "red" }}>
+            Something went wrong: {this.state.error.message}
+          </div>
+        )
       );
     }
     return this.props.children;
