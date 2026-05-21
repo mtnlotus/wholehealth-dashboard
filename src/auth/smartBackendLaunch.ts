@@ -1,7 +1,7 @@
 import FHIR from "fhirclient";
 import type Client from "fhirclient/lib/Client";
 import { type JWK, SignJWT, importJWK } from "jose";
-import { clientIdForIss, clientSecretForIss, scopeForIss } from "../config/fhirServers";
+import { type AppType, clientIdForIss, clientSecretForIss, scopeForIss } from "../config/fhirServers";
 
 interface SmartConfiguration {
   token_endpoint: string;
@@ -53,15 +53,20 @@ export async function buildClientAssertion(
  * @param iss - FHIR server base URL (from EHR launch ?iss= param)
  * @param patientIdHint - patient ID from launch URL; used only when the EHR
  *   does not include `patient` in the token response
+ * @param appType - selects the correct app registration when ISS has multiple entries
  */
-export async function smartBackendLaunch(iss: string, patientIdHint?: string): Promise<Client> {
-  const clientId = clientIdForIss(iss);
-  const clientSecret = clientSecretForIss(iss);
-  const clientScope = scopeForIss(iss);
+export async function smartBackendLaunch(
+  iss: string,
+  patientIdHint?: string,
+  appType?: AppType,
+): Promise<Client> {
+  const clientId = clientIdForIss(iss, appType);
+  const clientSecret = clientSecretForIss(iss, appType);
+  const clientScope = scopeForIss(iss, appType);
   const tokenEndpoint = await discoverTokenEndpoint(iss);
 
-  const launchPatient = patientIdHint ? '{"patient":"' + patientIdHint + '"}' : "";
-  const launchPatientEncoded = Buffer.from(launchPatient, "utf-8").toString("base64");
+  const launchPatient = patientIdHint ? `{"patient":"${patientIdHint}"}` : "";
+  const launchPatientEncoded = launchPatient ? btoa(launchPatient) : "";
 
   const body = clientSecret
     ? new URLSearchParams({

@@ -29,7 +29,7 @@ export function LaunchPage() {
       return;
     }
     const patientIdHint = params.get("patient") ?? undefined;
-    smartBackendLaunch(iss, patientIdHint)
+    smartBackendLaunch(iss, patientIdHint, "practitioner")
       .then((client) => {
         setSmartClient(client);
         setLaunchMode("smart");

@@ -22,8 +22,17 @@ interface TokenEndpointResponse {
 }
 
 async function jwtCodeExchange(state: StoredSmartState): Promise<Client> {
-  const code = new URLSearchParams(window.location.search).get("code");
-  if (!code) throw new Error("No authorization code in callback URL");
+  const params = new URLSearchParams(window.location.search);
+  const oauthError = params.get("error");
+  if (oauthError) {
+    const desc = params.get("error_description");
+    throw new Error(`Authorization server error: ${oauthError}${desc ? ` — ${desc}` : ""}`);
+  }
+  const code = params.get("code");
+  if (!code) {
+    console.error("[smartCallback] callback URL search:", window.location.search);
+    throw new Error("No authorization code in callback URL");
+  }
 
   const serverUrl = state.serverUrl ?? "";
   const clientId = state.clientId ?? (state.client_id as string | undefined) ?? "";

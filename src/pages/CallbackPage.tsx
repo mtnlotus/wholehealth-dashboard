@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { smartCallback } from "../auth/smartCallback";
 import { useAppStore } from "../store/appStore";
@@ -8,6 +8,7 @@ export function CallbackPage() {
   const setSmartClient = useAppStore((s) => s.setSmartClient);
   const setLaunchMode = useAppStore((s) => s.setLaunchMode);
   const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     smartCallback()
@@ -26,8 +27,9 @@ export function CallbackPage() {
         setLaunchMode(mode);
         navigate("/app");
       })
-      .catch(console.error);
+      .catch((err: unknown) => setError(String(err)));
   }, [navigate, setSmartClient, setLaunchMode]);
 
+  if (error) return <div style={{ color: "red", padding: "2rem" }}>Launch error: {error}</div>;
   return <div>Completing SMART authorization…</div>;
 }
