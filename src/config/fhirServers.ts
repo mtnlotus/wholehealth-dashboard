@@ -42,12 +42,11 @@ export const FHIR_SERVERS: FhirServerConfig[] = [
     appType: "practitioner",
     label: "VA Sandbox (Practitioner)",
   },
-  
+
   {
     iss: "https://fhir-myrecord.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d",
     clientId: "c4b5bb81-cd2f-431b-8d50-066696a9e367",
-    // clientSecret: "REDACTED-ROTATED-SECRET",
-    // authFlow: "code",
+    clientSecret: "REDACTED-ROTATED-SECRET",
     scope:
       "launch/patient openid profile fhirUser patient/Patient.read patient/DocumentReference.read patient/Binary.read patient/Goal.read patient/Condition.read patient/MedicationRequest.read",
     appType: "patient",
@@ -56,8 +55,7 @@ export const FHIR_SERVERS: FhirServerConfig[] = [
   {
     iss: "https://fhir-ehr-code.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d",
     clientId: "e5164fcc-f986-46ee-b923-9e21a92b88f9",
-    // clientSecret: "REDACTED-ROTATED-SECRET",
-    // clientAuthMethod: "jwt",
+    clientSecret: "REDACTED-ROTATED-SECRET",
     appType: "practitioner",
     label: "Oracle Sandbox (Practitioner)",
   },
