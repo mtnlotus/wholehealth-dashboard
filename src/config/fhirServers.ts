@@ -33,17 +33,21 @@ export const FHIR_SERVERS: FhirServerConfig[] = [
   },
   {
     iss: "https://sandbox-api.va.gov/services/fhir/v0/r4",
-    clientId: "0oa1b43cyc1mp4Br52p8",
+    clientId: "0oa1bc9ry2soVnuT02p8",
+    // scope:
+    //   "launch openid profile fhirUser user/Patient.read user/Practitioner.read user/DocumentReference.read user/Binary.read user/Condition.read user/MedicationRequest.read",
     scope:
-      "launch openid profile fhirUser user/Patient.read user/Practitioner.read user/DocumentReference.read user/Binary.read user/Condition.read user/MedicationRequest.read",
+      "launch openid profile fhirUser user/Patient.read user/Practitioner.read user/Condition.read user/MedicationRequest.read",
     authFlow: "backend",
     appType: "practitioner",
     label: "VA Sandbox (Practitioner)",
   },
+  
   {
     iss: "https://fhir-myrecord.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d",
     clientId: "c4b5bb81-cd2f-431b-8d50-066696a9e367",
-    clientSecret: "REDACTED-ROTATED-SECRET",
+    // clientSecret: "REDACTED-ROTATED-SECRET",
+    // authFlow: "code",
     scope:
       "launch/patient openid profile fhirUser patient/Patient.read patient/DocumentReference.read patient/Binary.read patient/Goal.read patient/Condition.read patient/MedicationRequest.read",
     appType: "patient",
@@ -52,17 +56,15 @@ export const FHIR_SERVERS: FhirServerConfig[] = [
   {
     iss: "https://fhir-ehr-code.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d",
     clientId: "e5164fcc-f986-46ee-b923-9e21a92b88f9",
-    clientSecret: "REDACTED-ROTATED-SECRET",
+    // clientSecret: "REDACTED-ROTATED-SECRET",
     // clientAuthMethod: "jwt",
     appType: "practitioner",
     label: "Oracle Sandbox (Practitioner)",
   },
-  // Epic patient app
+  
   {
     iss: "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4",
     clientId: "06f080fa-155c-40a9-b2bd-e4ccb9987b1a",
-    clientSecret:
-      "REDACTED-ROTATED-SECRET",
     appType: "patient",
     label: "Epic Sandbox",
   },
