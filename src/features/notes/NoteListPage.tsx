@@ -15,6 +15,14 @@ import { useAppStore } from "../../store/appStore";
 import { FileUploadFallback } from "./FileUploadFallback";
 import { SampleBundleLoader } from "./SampleBundleLoader";
 
+function toPdfDataUri(binaryString: string): string | null {
+  try {
+    return `data:application/pdf;base64,${btoa(binaryString)}`;
+  } catch {
+    return null;
+  }
+}
+
 export function NoteListPage() {
   const client = useSmartClient();
   const patientId = client?.patient?.id ?? undefined;
@@ -30,6 +38,7 @@ export function NoteListPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [parsing, setParsing] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState<Record<string, boolean>>({});
 
   const binary = useBinaryContent();
 
@@ -108,6 +117,7 @@ export function NoteListPage() {
 
   return (
     <div style={{ padding: "1rem", maxWidth: "760px" }}>
+      <style>{`@keyframes wh-spin { to { transform: rotate(360deg); } }`}</style>
       <h2>Clinical Notes</h2>
 
       {showNotes && (
@@ -195,6 +205,83 @@ export function NoteListPage() {
                             <span style={{ color: "red", fontSize: "0.85rem" }}>
                               {binary.errors[contentKey]}
                             </span>
+                          ) : att?.contentType?.startsWith("text/html") ? (
+                            <iframe
+                              srcDoc={binary.content[contentKey] ?? ""}
+                              sandbox=""
+                              title={meta.title}
+                              style={{
+                                width: "100%",
+                                height: "400px",
+                                border: "1px solid #e0e0e0",
+                                borderRadius: "4px",
+                                background: "#fff",
+                                display: "block",
+                              }}
+                            />
+                          ) : att?.contentType?.startsWith("application/pdf") ? (
+                            (() => {
+                              const src = toPdfDataUri(binary.content[contentKey] ?? "");
+                              const isRendering = pdfLoading[contentKey] !== false;
+                              return src ? (
+                                <div style={{ position: "relative", height: "500px" }}>
+                                  {isRendering && (
+                                    <div
+                                      style={{
+                                        position: "absolute",
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        background: "#fafafa",
+                                        border: "1px solid #e0e0e0",
+                                        borderRadius: "4px",
+                                        gap: "0.75rem",
+                                        color: "#666",
+                                        fontSize: "0.9rem",
+                                        zIndex: 1,
+                                      }}
+                                    >
+                                      <div
+                                        style={{
+                                          width: "36px",
+                                          height: "36px",
+                                          border: "3px solid #e0e0e0",
+                                          borderTop: "3px solid #1a73e8",
+                                          borderRadius: "50%",
+                                          animation: "wh-spin 0.8s linear infinite",
+                                        }}
+                                      />
+                                      <span>Rendering PDF…</span>
+                                    </div>
+                                  )}
+                                  <iframe
+                                    src={src}
+                                    title={meta.title}
+                                    onLoad={() =>
+                                      setPdfLoading((prev) => ({ ...prev, [contentKey]: false }))
+                                    }
+                                    style={{
+                                      width: "100%",
+                                      height: "500px",
+                                      border: "1px solid #e0e0e0",
+                                      borderRadius: "4px",
+                                      background: "#fff",
+                                      display: "block",
+                                      visibility: isRendering ? "hidden" : "visible",
+                                    }}
+                                  />
+                                </div>
+                              ) : (
+                                <span style={{ color: "red", fontSize: "0.85rem" }}>
+                                  Unable to render PDF content.
+                                </span>
+                              );
+                            })()
                           ) : (
                             <pre
                               style={{
