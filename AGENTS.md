@@ -9,7 +9,7 @@ See Mountain Lotus WellBeing [platform context](https://github.com/mtnlotus/whol
 * MVP Features
     * SMART on FHIR web app used by clinicians, embedded in EHR systems such as Epic or Oracle Health Millennium.
     * Use `coach-notes` library to parse clinical notes from health coaches and summarized content as a FHIR Bundle and a patient-friendly Personal Health Plan.
-    * Use `shc-create` to create a SMART Health Card for a patient's Personal Health Plan.
+    * Use `shc-services` to create a SMART Health Card for a patient's Personal Health Plan.
     
 * **Primary Goal:** This is a React TypeScript app designed to facilitate the secure sharing of medical records using FHIR DocumentReference to access clinical notes from health & wellness coaches and share SMART Health Cards and Links for Personal Health Plans.
 * **Key Features:** The library implements three main standards for health data interchange:
