@@ -4,7 +4,7 @@ This document provides essential context for AI models interacting with this pro
 
 ## Project Overview & Purpose
 
-See Mountain Lotus WellBeing [project documents](../shc-documents/)
+See Mountain Lotus WellBeing [platform context](https://github.com/mtnlotus/wholehealth-workspace)
 
 * MVP Features
     * SMART on FHIR web app used by clinicians, embedded in EHR systems such as Epic or Oracle Health Millennium.
