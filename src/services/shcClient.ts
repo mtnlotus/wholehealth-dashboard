@@ -19,7 +19,7 @@ export async function createSmartHealthCard(
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(`shc-create ${res.status}: ${JSON.stringify(err)}`);
+    throw new Error(`shc-services ${res.status}: ${JSON.stringify(err)}`);
   }
   return res.json() as Promise<CreateSHCResponse>;
 }
