@@ -9,8 +9,9 @@
   },
   "routes": [
     { "route": "/launch", "rewrite": "/index.html" },
+    { "route": "/patient", "rewrite": "/index.html" },
     { "route": "/callback", "rewrite": "/index.html" },
-    { "route": "/auth/azure-callback", "rewrite": "/index.html" }
+    { "route": "/app*", "rewrite": "/index.html" }
   ],
   "globalHeaders": {
     "Cache-Control": "no-cache"
