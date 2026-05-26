@@ -72,6 +72,20 @@ export const FHIR_SERVERS: FhirServerConfig[] = [
     appType: "practitioner",
     label: "Epic Sandbox (Practitioner)",
   },
+  {
+    iss: "https://launch.smarthealthit.org/v/r4/fhir",
+    clientId: "anything",
+    clientAuthMethod: "none",
+    appType: "patient",
+    label: "SMART Health IT Sandbox",
+  },
+  {
+    iss: "https://launch.smarthealthit.org/v/r4/fhir",
+    clientId: "anything",
+    clientAuthMethod: "none",
+    appType: "practitioner",
+    label: "SMART Health IT Sandbox (Practitioner)",
+  },
 ];
 
 /** Find the best-matching server for the given ISS and optional app type. */
@@ -121,13 +135,17 @@ export function authFlowForIss(iss: string, appType?: AppType): "code" | "backen
  * "secret" — client_secret in the POST body
  * "jwt"    — signed JWT client_assertion (requires VITE_SMART_PRIVATE_KEY_JWK)
  * "none"   — public PKCE client, no credential in token request
+ *
  * Explicit clientAuthMethod config wins; otherwise inferred from clientSecret / JWK presence.
+ * JWT is only inferred for explicitly configured servers — standalone launches with an
+ * unknown ISS default to "none" (plain PKCE) because JWT requires a pre-registered
+ * public key with the EHR, which ad-hoc servers won't have.
  */
 export function clientAuthMethodForIss(iss: string, appType?: AppType): "secret" | "jwt" | "none" {
   const server = findServer(iss, appType);
   if (server?.clientAuthMethod) return server.clientAuthMethod;
   if (server?.clientSecret) return "secret";
-  if (import.meta.env.VITE_SMART_PRIVATE_KEY_JWK) return "jwt";
+  if (server && import.meta.env.VITE_SMART_PRIVATE_KEY_JWK) return "jwt";
   return "none";
 }
 
@@ -141,6 +159,6 @@ export function clientAuthMethodForClientId(iss: string, clientId: string): "sec
   const server = FHIR_SERVERS.find((s) => s.iss === normalized && s.clientId === clientId);
   if (server?.clientAuthMethod) return server.clientAuthMethod;
   if (server?.clientSecret) return "secret";
-  if (import.meta.env.VITE_SMART_PRIVATE_KEY_JWK) return "jwt";
+  if (server && import.meta.env.VITE_SMART_PRIVATE_KEY_JWK) return "jwt";
   return "none";
 }
