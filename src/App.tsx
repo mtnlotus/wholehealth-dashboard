@@ -3,7 +3,6 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { NoteListPage } from "./features/notes/NoteListPage";
 import { PhpSummaryPage } from "./features/php/PhpSummaryPage";
 import { SharingPage } from "./features/sharing/SharingPage";
-import { AzureCallbackPage } from "./pages/AzureCallbackPage";
 import { CallbackPage } from "./pages/CallbackPage";
 import { LaunchPage } from "./pages/LaunchPage";
 import { PatientLaunchPage } from "./pages/PatientLaunchPage";
@@ -17,8 +16,7 @@ export function App() {
           <Route path="/launch" element={<LaunchPage />} />
           <Route path="/patient" element={<PatientLaunchPage />} />
           <Route path="/callback" element={<CallbackPage />} />
-          <Route path="/auth/azure-callback" element={<AzureCallbackPage />} />
-          <Route path="/" element={<StandalonePage />} />
+<Route path="/" element={<StandalonePage />} />
           <Route path="/app">
             <Route index element={<NoteListPage />} />
             <Route path="php" element={<PhpSummaryPage />} />
