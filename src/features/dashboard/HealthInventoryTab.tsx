@@ -1,26 +1,31 @@
 import { EmptyState } from "../../components/EmptyState";
-import { usePhiObservations, type PhiAssessment } from "../../hooks/usePhiObservations";
+import { usePhiObservations, type PhiAreaScore, type PhiAssessment } from "../../hooks/usePhiObservations";
 import { useSmartClient } from "../../hooks/useSmartClient";
 
+// PCO personal-health-inventory-temporary area codes mapped to display + emoji.
+// Order follows the VA Whole Health wheel.
 interface PhiAreaDef {
   code: string;
-  display: string;
   emoji: string;
 }
 
-const PHI_AREAS: PhiAreaDef[] = [
-  { code: "moving-the-body", display: "Moving the Body", emoji: "🏃" },
-  { code: "surroundings", display: "Surroundings", emoji: "🌿" },
-  { code: "personal-development", display: "Personal Development", emoji: "📚" },
-  { code: "food-and-drink", display: "Food & Drink", emoji: "🍎" },
-  { code: "recharge", display: "Recharge", emoji: "😴" },
-  { code: "family-friends-coworkers", display: "Family, Friends & Co-Workers", emoji: "👥" },
-  { code: "spirit-and-soul", display: "Spirit & Soul", emoji: "✨" },
-  { code: "power-of-the-mind", display: "Power of the Mind", emoji: "🧠" },
-  { code: "professional-care", display: "Professional Care", emoji: "🩺" },
+const PHI_AREA_DEFS: PhiAreaDef[] = [
+  { code: "body", emoji: "🏃" },
+  { code: "surroundings", emoji: "🌿" },
+  { code: "personal-development", emoji: "📚" },
+  { code: "nourishment", emoji: "🍎" },
+  { code: "recharge", emoji: "😴" },
+  { code: "family-friends", emoji: "👥" },
+  { code: "spirit-soul", emoji: "✨" },
+  { code: "mind", emoji: "🧠" },
+  { code: "professional-care", emoji: "🩺" },
 ];
 
-function barColor(score: number): string {
+function emojiForCode(code: string): string {
+  return PHI_AREA_DEFS.find((d) => d.code === code)?.emoji ?? "⭐";
+}
+
+function nowBarColor(score: number): string {
   if (score >= 4) return "#3d9a50";
   if (score >= 3) return "#d4820a";
   return "#d04040";
@@ -32,15 +37,11 @@ function scoreLabel(score: number): string {
   return "Exploring";
 }
 
-function AreaCard({
-  def,
-  score,
-}: {
-  def: PhiAreaDef;
-  score: number | undefined;
-}) {
-  const hasScore = score !== undefined;
-  const pct = hasScore ? (score / 5) * 100 : 0;
+function AreaCard({ area }: { area: PhiAreaScore }) {
+  const hasNow = area.nowRating !== undefined;
+  const nowPct = hasNow ? (area.nowRating! / 5) * 100 : 0;
+  const futurePct =
+    area.futureRating !== undefined ? (area.futureRating / 5) * 100 : undefined;
 
   return (
     <div
@@ -52,36 +53,94 @@ function AreaCard({
         boxShadow: "var(--shadow-card)",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.625rem" }}>
-        <span style={{ fontSize: 20 }}>{def.emoji}</span>
-        <span style={{ fontWeight: 600, fontSize: 14 }}>{def.display}</span>
+      {/* Header */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          marginBottom: "0.625rem",
+        }}
+      >
+        <span style={{ fontSize: 20 }}>{emojiForCode(area.code)}</span>
+        <span style={{ fontWeight: 600, fontSize: 14 }}>{area.display}</span>
       </div>
-      {hasScore ? (
+
+      {hasNow ? (
         <>
+          {/* Now rating bar */}
           <div
             style={{
               height: 6,
               background: "var(--color-border)",
               borderRadius: 99,
               overflow: "hidden",
-              marginBottom: "0.5rem",
+              marginBottom: "0.375rem",
             }}
           >
             <div
               style={{
                 height: "100%",
-                width: `${pct}%`,
-                background: barColor(score),
+                width: `${nowPct}%`,
+                background: nowBarColor(area.nowRating!),
                 borderRadius: 99,
               }}
             />
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
-            <span style={{ color: "var(--color-text-muted)" }}>{scoreLabel(score)}</span>
+
+          {/* Score row */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              fontSize: 12,
+            }}
+          >
+            <span style={{ color: "var(--color-text-muted)" }}>
+              {scoreLabel(area.nowRating!)}
+            </span>
             <span style={{ fontWeight: 700, color: "var(--color-text)" }}>
-              {score}<span style={{ color: "var(--color-text-muted)", fontWeight: 400 }}>/5</span>
+              {area.nowRating}
+              <span style={{ color: "var(--color-text-muted)", fontWeight: 400 }}>/5</span>
             </span>
           </div>
+
+          {/* Future rating indicator */}
+          {futurePct !== undefined && (
+            <div style={{ marginTop: "0.5rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: 11,
+                  color: "var(--color-text-muted)",
+                  marginBottom: "0.25rem",
+                }}
+              >
+                <span>Goal</span>
+                <span style={{ fontWeight: 600 }}>{area.futureRating}/5</span>
+              </div>
+              <div
+                style={{
+                  height: 4,
+                  background: "var(--color-border)",
+                  borderRadius: 99,
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${futurePct}%`,
+                    background: "var(--color-accent-blue)",
+                    borderRadius: 99,
+                    opacity: 0.6,
+                  }}
+                />
+              </div>
+            </div>
+          )}
         </>
       ) : (
         <div style={{ fontSize: 12, color: "var(--color-text-muted)", fontStyle: "italic" }}>
@@ -101,10 +160,9 @@ function AssessmentGrid({ assessment }: { assessment: PhiAssessment }) {
         gap: "0.75rem",
       }}
     >
-      {PHI_AREAS.map((def) => {
-        const area = assessment.areas.find((a) => a.code === def.code);
-        return <AreaCard key={def.code} def={def} score={area?.score} />;
-      })}
+      {assessment.areas.map((area) => (
+        <AreaCard key={area.code} area={area} />
+      ))}
     </div>
   );
 }
@@ -129,7 +187,14 @@ export function HealthInventoryTab() {
 
   if (isLoading) {
     return (
-      <div style={{ padding: "2rem 1.25rem", textAlign: "center", color: "var(--color-text-muted)", fontSize: 13 }}>
+      <div
+        style={{
+          padding: "2rem 1.25rem",
+          textAlign: "center",
+          color: "var(--color-text-muted)",
+          fontSize: 13,
+        }}
+      >
         Loading Health Inventory…
       </div>
     );
@@ -137,47 +202,109 @@ export function HealthInventoryTab() {
 
   const latest = assessments?.[0];
 
-  if (!latest) {
+  if (!latest || latest.areas.length === 0) {
     return (
       <div style={{ padding: "2rem 1.25rem" }}>
         <EmptyState
           message="No Health Inventory assessments found for this patient."
-          detail="PHI assessment data is sourced from FHIR Observations. No records have been recorded yet."
+          detail="PHI assessments are sourced from FHIR Observations (PCO pco-what-matters-assessment profile). No records have been recorded yet."
         />
       </div>
     );
   }
 
+  const formattedDate = new Date(latest.date + "T00:00:00").toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
   return (
-    <div style={{ padding: "1rem 1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+    <div
+      style={{
+        padding: "1rem 1.25rem",
+        display: "flex",
+        flexDirection: "column",
+        gap: "1rem",
+      }}
+    >
       {/* Summary bar */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <span style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "0.5rem",
+        }}
+      >
+        <div style={{ fontSize: 13 }}>
+          <span style={{ color: "var(--color-text-muted)" }}>
             VA Personal Health Inventory · Last completed:{" "}
           </span>
-          <span style={{ fontWeight: 600, fontSize: 13 }}>
-            {new Date(latest.date + "T00:00:00").toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </span>
+          <strong>{formattedDate}</strong>
           {latest.overall !== undefined && (
-            <span style={{ fontSize: 12, color: "var(--color-text-muted)", marginLeft: "0.75rem" }}>
-              Overall avg: <strong>{latest.overall.toFixed(1)}/5</strong>
+            <span style={{ color: "var(--color-text-muted)", marginLeft: "0.75rem" }}>
+              Overall avg:{" "}
+              <strong style={{ color: "var(--color-text)" }}>
+                {latest.overall.toFixed(1)}/5
+              </strong>
             </span>
           )}
         </div>
+
+        {/* Prior assessment dates */}
         {assessments && assessments.length > 1 && (
-          <div style={{ display: "flex", gap: "0.5rem", fontSize: 12, color: "var(--color-text-muted)" }}>
+          <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
             {assessments.slice(1, 4).map((a) => (
-              <span key={a.date} style={{ padding: "2px 8px", border: "1px solid var(--color-border)", borderRadius: 99 }}>
+              <span
+                key={a.date}
+                style={{
+                  padding: "2px 8px",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: 99,
+                  fontSize: 11,
+                  color: "var(--color-text-muted)",
+                }}
+              >
                 {a.date.slice(0, 7)} · {a.overall?.toFixed(1) ?? "—"}
               </span>
             ))}
           </div>
         )}
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: "flex", gap: "1rem", fontSize: 11, color: "var(--color-text-muted)" }}>
+        <span>
+          <span
+            style={{
+              display: "inline-block",
+              width: 10,
+              height: 4,
+              borderRadius: 99,
+              background: "#3d9a50",
+              verticalAlign: "middle",
+              marginRight: 4,
+            }}
+          />
+          Now rating
+        </span>
+        <span>
+          <span
+            style={{
+              display: "inline-block",
+              width: 10,
+              height: 4,
+              borderRadius: 99,
+              background: "var(--color-accent-blue)",
+              opacity: 0.6,
+              verticalAlign: "middle",
+              marginRight: 4,
+            }}
+          />
+          Goal rating
+        </span>
       </div>
 
       <AssessmentGrid assessment={latest} />
