@@ -2,7 +2,7 @@ import { useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
 import { GaugeArc } from "../../components/GaugeArc";
 import { ScoreBar } from "../../components/ScoreBar";
-import { SmartHealthCardPanel } from "../sharing/SmartHealthCardPanel";
+import { SHCSelectionModal } from "../sharing/SHCSelectionModal";
 import { useAppStore } from "../../store/appStore";
 
 const card: React.CSSProperties = {
@@ -124,11 +124,7 @@ export function PhpTab() {
               : ""}
           </p>
         </div>
-        {fhirBundle && (
-          <div>
-            <SmartHealthCardPanel fhirBundle={fhirBundle} />
-          </div>
-        )}
+        {fhirBundle && <SHCSelectionModal fhirBundle={fhirBundle} />}
       </div>
 
       {/* MAP */}
