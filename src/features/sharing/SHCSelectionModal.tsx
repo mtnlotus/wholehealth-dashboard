@@ -251,7 +251,7 @@ function SHCModal({ fhirBundle, onClose }: ModalProps) {
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Generate SMART Health Card"
+        aria-label="SMART Health Card"
         style={{
           background: "var(--color-bg-card)",
           borderRadius: "var(--radius-lg)",
@@ -276,7 +276,7 @@ function SHCModal({ fhirBundle, onClose }: ModalProps) {
         >
           <div>
             <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "var(--color-primary)" }}>
-              Generate Health Card
+              SMART Health Card
             </h2>
             <p style={{ margin: "0.25rem 0 0", fontSize: 12, color: "var(--color-text-muted)" }}>
               Choose which sections to include in your SMART Health Card
@@ -481,7 +481,7 @@ export function SHCSelectionModal({ fhirBundle }: Props) {
         }}
       >
         <span style={{ fontSize: 15 }}>🏥</span>
-        Generate Health Card
+        SMART Health Card
       </button>
 
       {open && (
