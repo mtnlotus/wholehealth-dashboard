@@ -1,28 +1,30 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { NoteListPage } from "./features/notes/NoteListPage";
-import { PhpSummaryPage } from "./features/php/PhpSummaryPage";
-import { SharingPage } from "./features/sharing/SharingPage";
+import { DashboardLayout } from "./features/dashboard/DashboardLayout";
 import { CallbackPage } from "./pages/CallbackPage";
+import { DevPage } from "./pages/DevPage";
 import { LaunchPage } from "./pages/LaunchPage";
 import { PatientLaunchPage } from "./pages/PatientLaunchPage";
-import { StandalonePage } from "./pages/StandalonePage";
 
 export function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
         <Routes>
+          {/* SMART on FHIR launch flows */}
           <Route path="/launch" element={<LaunchPage />} />
           <Route path="/patient" element={<PatientLaunchPage />} />
           <Route path="/callback" element={<CallbackPage />} />
-<Route path="/" element={<StandalonePage />} />
-          <Route path="/app">
-            <Route index element={<NoteListPage />} />
-            <Route path="php" element={<PhpSummaryPage />} />
-            <Route path="share" element={<SharingPage />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
+
+          {/* Main dashboard — tab-based, driven by ?tab= search param */}
+          <Route path="/app" element={<DashboardLayout />} />
+
+          {/* Developer / demo page — standalone testing without an EHR */}
+          <Route path="/dev" element={<DevPage />} />
+
+          {/* Default: redirect to dev page in standalone, app page after SMART launch */}
+          <Route path="/" element={<Navigate to="/dev" replace />} />
+          <Route path="*" element={<Navigate to="/dev" replace />} />
         </Routes>
       </BrowserRouter>
     </ErrorBoundary>
