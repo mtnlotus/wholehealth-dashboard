@@ -133,14 +133,7 @@ export function PhpTab() {
     <div style={{ padding: "1rem 1.25rem", maxWidth: 820, display: "flex", flexDirection: "column", gap: "0.75rem" }}>
       {/* Header row */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "0.25rem" }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Personal Health Plan</h2>
-          <p style={{ margin: "0.25rem 0 0", fontSize: 13, color: "var(--color-text-muted)" }}>
-            {phpData.patient
-              ? `${phpData.patient.given.join(" ")} ${phpData.patient.family}`
-              : ""}
-          </p>
-        </div>
+        <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Personal Health Plan</h2>
         {fhirBundle && <SHCSelectionModal fhirBundle={fhirBundle} />}
       </div>
 

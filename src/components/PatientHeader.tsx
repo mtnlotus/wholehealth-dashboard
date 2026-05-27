@@ -1,5 +1,4 @@
 import { usePatient } from "../hooks/usePatient";
-import { useAppStore } from "../store/appStore";
 
 export type TabId = "summary" | "php" | "records" | "inventory" | "wbs" | "notes";
 
@@ -42,15 +41,6 @@ function genderAbbr(gender: string | undefined): string {
 
 export function PatientHeader({ activeTab, onTabChange }: Props) {
   const patient = usePatient();
-  const phpData = useAppStore((s) => s.phpData);
-
-  // Most recent WBS date from store data
-  const wbsDate = phpData?.wbs
-    ? new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })
-    : undefined;
-
-  const hasPlan = !!phpData;
-
   return (
     <header
       style={{
@@ -106,52 +96,6 @@ export function PatientHeader({ activeTab, onTabChange }: Props) {
           </div>
         </div>
 
-        {/* Status chips + actions */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
-          {hasPlan && (
-            <span
-              style={{
-                padding: "3px 10px",
-                borderRadius: 99,
-                border: "1px solid var(--color-border)",
-                fontSize: 12,
-                fontWeight: 500,
-                color: "var(--color-text-muted)",
-              }}
-            >
-              Active Plan
-            </span>
-          )}
-          {wbsDate && (
-            <span
-              style={{
-                padding: "3px 10px",
-                borderRadius: 99,
-                border: "1px solid var(--color-border)",
-                fontSize: 12,
-                fontWeight: 500,
-                color: "var(--color-text-muted)",
-              }}
-            >
-              WBS: {wbsDate}
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={() => onTabChange("wbs")}
-            style={{
-              padding: "5px 12px",
-              borderRadius: 99,
-              background: "var(--color-primary)",
-              color: "#fff",
-              border: "none",
-              fontSize: 12,
-              fontWeight: 600,
-            }}
-          >
-            + New WBS
-          </button>
-        </div>
       </div>
 
       {/* Tab navigation */}
