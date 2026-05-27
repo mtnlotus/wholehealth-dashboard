@@ -119,17 +119,35 @@ function HistoryRow({ obs, isFirst }: { obs: WbsObservation; isFirst: boolean })
   );
 }
 
-/** Build a WbsObservation from phpData.wbs for standalone mode */
+/** Build a WbsObservation from phpData.wbs (note-parsed data). */
 function wbsFromStore(phpData: ReturnType<typeof useAppStore.getState>["phpData"]): WbsObservation | null {
   if (!phpData?.wbs) return null;
   const { wbs } = phpData;
   return {
-    date: new Date().toISOString().slice(0, 10),
+    // Use the note's session date when available; fall back to today.
+    date: wbs.session_date ?? new Date().toISOString().slice(0, 10),
     satisfied: wbs.satisfied,
     involved: wbs.involved,
     functioning: wbs.functioning,
     average: wbs.average,
   };
+}
+
+/**
+ * Merge FHIR observations with a note-parsed observation.
+ * FHIR is authoritative: if both sources share a date, the FHIR record wins.
+ * Result is sorted most-recent first.
+ */
+function mergeObservations(
+  fhirObs: WbsObservation[],
+  storeObs: WbsObservation | null,
+): WbsObservation[] {
+  if (!storeObs) return fhirObs;
+  const fhirDates = new Set(fhirObs.map((o) => o.date));
+  const merged = fhirDates.has(storeObs.date)
+    ? fhirObs
+    : [...fhirObs, storeObs];
+  return merged.sort((a, b) => b.date.localeCompare(a.date));
 }
 
 export function WbsTab() {
@@ -140,10 +158,13 @@ export function WbsTab() {
 
   const { data: fhirWbs, isLoading } = useWbsObservations(patientId);
 
-  // Use FHIR data in SMART mode, fall back to store data in standalone
+  // Always merge both sources:
+  //   • FHIR observations (EHR queries) — authoritative, wins on date collision
+  //   • Note-parsed WBS (phpData.wbs) — from selected clinical notes
+  const storeObs = wbsFromStore(phpData);
   const observations: WbsObservation[] = isSmartMode
-    ? (fhirWbs ?? [])
-    : ([wbsFromStore(phpData)].filter((o): o is WbsObservation => o !== null));
+    ? mergeObservations(fhirWbs ?? [], storeObs)
+    : mergeObservations([], storeObs);
 
   const latest = observations[0];
   const prior = observations[1];
