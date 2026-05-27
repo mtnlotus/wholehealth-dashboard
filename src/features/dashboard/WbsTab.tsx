@@ -308,7 +308,7 @@ export function WbsTab() {
               fontWeight: 700,
               letterSpacing: "0.08em",
               textTransform: "uppercase",
-              color: "var(--color-text-muted)",
+              color: "var(--color-primary)",
               marginBottom: "0.5rem",
             }}
           >

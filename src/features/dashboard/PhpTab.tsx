@@ -66,16 +66,33 @@ function AccordionSection({
     <div style={card}>
       <button
         type="button"
-        style={accordionHeader}
+        style={{
+          ...accordionHeader,
+          background: open ? "var(--color-bg-highlight)" : "none",
+        }}
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
       >
-        <span style={{ fontWeight: 600, fontSize: 15, color: "var(--color-primary)" }}>
+        <span
+          style={{
+            fontWeight: 600,
+            fontSize: 15,
+            color: open ? "var(--color-primary)" : "var(--color-text)",
+          }}
+        >
           {title}
         </span>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           {badge}
-          <span style={{ fontSize: 16, color: "var(--color-text-muted)" }}>{open ? "∧" : "∨"}</span>
+          <span
+            style={{
+              fontSize: 14,
+              color: open ? "var(--color-primary)" : "var(--color-text-muted)",
+              fontWeight: open ? 600 : 400,
+            }}
+          >
+            {open ? "∧" : "∨"}
+          </span>
         </div>
       </button>
       {open && (
