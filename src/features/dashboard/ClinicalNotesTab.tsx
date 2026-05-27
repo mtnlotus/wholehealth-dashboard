@@ -75,6 +75,7 @@ export function ClinicalNotesTab() {
 
   const setPhpData = useAppStore((s) => s.setPhpData);
   const setFhirBundle = useAppStore((s) => s.setFhirBundle);
+  const clearPlan = useAppStore((s) => s.clearPlan);
   const launchMode = useAppStore((s) => s.launchMode);
   const standaloneDocRefs = useAppStore((s) => s.standaloneDocRefs);
   const binaryCache = useAppStore((s) => s.binaryCache);
@@ -227,9 +228,29 @@ export function ClinicalNotesTab() {
             border: "1px solid var(--color-tag-green-bg)",
           }}
         >
-          <span style={{ fontSize: 13, color: "var(--color-primary)", fontWeight: 500 }}>
-            {selectedIds.size} note{selectedIds.size !== 1 ? "s" : ""} selected
+          <span style={{ fontSize: 13, color: "var(--color-primary)", fontWeight: 500, flex: 1 }}>
+            {selectedIds.size} note{selectedIds.size !== 1 ? "s" : ""} selected for Personal Health Plan
           </span>
+          {parseError && <span style={{ fontSize: 12, color: "#d04040" }}>{parseError}</span>}
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedIds(new Set());
+              clearPlan();
+            }}
+            style={{
+              padding: "5px 14px",
+              borderRadius: 99,
+              background: "var(--color-bg-card)",
+              color: "var(--color-text-muted)",
+              border: "1px solid var(--color-border)",
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: "pointer",
+            }}
+          >
+            Clear
+          </button>
           <button
             type="button"
             onClick={handleParseSelected}
@@ -237,18 +258,20 @@ export function ClinicalNotesTab() {
             style={{
               padding: "5px 16px",
               borderRadius: 99,
-              background: "var(--color-primary)",
+              background: "var(--color-active-badge)",
               color: "#fff",
               border: "none",
               fontSize: 13,
               fontWeight: 600,
               cursor: parsing ? "not-allowed" : "pointer",
               opacity: parsing ? 0.7 : 1,
+              display: "flex",
+              alignItems: "center",
+              gap: "0.3rem",
             }}
           >
-            {parsing ? "Generating…" : "Generate Health Plan"}
+            {parsing ? "Processing…" : "View in Health Plan →"}
           </button>
-          {parseError && <span style={{ fontSize: 12, color: "#d04040" }}>{parseError}</span>}
         </div>
       )}
 

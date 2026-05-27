@@ -19,6 +19,8 @@ interface AppState {
   setPhpData: (data: PhpData) => void;
   setFhirBundle: (bundle: fhirR4.Bundle) => void;
   setStandaloneBundle: (refs: fhirR4.DocumentReference[], cache: Record<string, string>) => void;
+  /** Clear only the derived health plan data; preserves session and EHR state. */
+  clearPlan: () => void;
   reset: () => void;
 }
 
@@ -34,6 +36,7 @@ export const useAppStore = create<AppState>((set) => ({
   setPhpData: (data) => set({ phpData: data }),
   setFhirBundle: (bundle) => set({ fhirBundle: bundle }),
   setStandaloneBundle: (refs, cache) => set({ standaloneDocRefs: refs, binaryCache: cache }),
+  clearPlan: () => set({ phpData: null, fhirBundle: null }),
   reset: () =>
     set({
       launchMode: null,
