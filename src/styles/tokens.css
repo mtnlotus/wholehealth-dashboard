@@ -1,0 +1,52 @@
+:root {
+  --color-bg: #eae3d9;
+  --color-bg-card: #ffffff;
+  --color-bg-card-warm: #f5f1ec;
+  --color-bg-highlight: #e8f0e9;
+  --color-bg-blue-highlight: #e3eef9;
+  --color-primary: #3d6b40;
+  --color-primary-dark: #2a4d2c;
+  --color-primary-btn: #1a3d1c;
+  --color-accent-blue: #1a5fa8;
+  --color-text: #1a1a1a;
+  --color-text-muted: #6b6b6b;
+  --color-border: #d8d2c8;
+  --color-border-light: #e8e2d8;
+  --color-active-badge: #3d9a50;
+  --color-tag-green-bg: #d4ebd7;
+  --color-tag-blue-bg: #c0d8f5;
+  --color-tag-amber-bg: #fde8c0;
+  --font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--color-bg);
+  font-family: var(--font-family);
+  color: var(--color-text);
+  margin: 0;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+}
