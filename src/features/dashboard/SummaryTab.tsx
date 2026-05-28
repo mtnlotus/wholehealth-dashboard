@@ -1,9 +1,15 @@
+import { useMemo } from "react";
+import type { fhirR4 } from "@smile-cdr/fhirts";
 import type { Goal } from "coach-notes";
 import type { TabId } from "../../components/PatientHeader";
 import { EmptyState } from "../../components/EmptyState";
 import { GaugeArc } from "../../components/GaugeArc";
 import { ReadinessBar } from "../../components/ScoreBar";
 import { useAppStore } from "../../store/appStore";
+
+// SNOMED code for "What Matters Most" / MAP observation (must match fhir-builder.ts)
+const SNOMED_SYSTEM = "http://snomed.info/sct";
+const WHAT_MATTERS_CODE = "247751003";
 
 // ─── Goal date formatting ────────────────────────────────────────────────────
 function formatGoalDate(d: string | undefined): string {
@@ -139,6 +145,26 @@ interface Props {
 
 export function SummaryTab({ onTabChange }: Props) {
   const phpData = useAppStore((s) => s.phpData);
+  const fhirBundle = useAppStore((s) => s.fhirBundle);
+
+  // Extract the most recent MAP observation date from the generated FHIR bundle.
+  const mapDate = useMemo((): string | undefined => {
+    const entries = fhirBundle?.entry ?? [];
+    const dates = entries
+      .map((e) => e.resource as fhirR4.Observation)
+      .filter(
+        (r) =>
+          r?.resourceType === "Observation" &&
+          (r.code?.coding ?? []).some(
+            (c) => c.system === SNOMED_SYSTEM && c.code === WHAT_MATTERS_CODE,
+          ),
+      )
+      .map((r) => r.effectiveDateTime?.slice(0, 10))
+      .filter((d): d is string => !!d)
+      .sort()
+      .reverse();
+    return dates[0] ?? phpData?.session_date;
+  }, [fhirBundle, phpData?.session_date]);
 
   if (!phpData) {
     return (
@@ -169,6 +195,11 @@ export function SummaryTab({ onTabChange }: Props) {
                   What matters most to you in your life right now?
                 </p>
                 <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6 }}>{phpData.map}</p>
+                {mapDate && (
+                  <p style={{ margin: "0.5rem 0 0", fontSize: 11, color: "var(--color-text-muted)" }}>
+                    Recorded {formatGoalDate(mapDate)}
+                  </p>
+                )}
               </>
             ) : (
               <EmptyState message="No MAP recorded." />
@@ -177,12 +208,19 @@ export function SummaryTab({ onTabChange }: Props) {
 
           {/* WBS */}
           <div style={card}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-              <div style={sectionLabel}>Well-Being Signs</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
+              <div>
+                <div style={sectionLabel}>Well-Being Signs</div>
+                {wbs?.session_date && (
+                  <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: -6 }}>
+                    {formatGoalDate(wbs.session_date)}
+                  </div>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => onTabChange("wbs")}
-                style={{ fontSize: 12, color: "var(--color-accent-blue)", background: "none", border: "none", padding: 0, cursor: "pointer", fontWeight: 500 }}
+                style={{ fontSize: 12, color: "var(--color-accent-blue)", background: "none", border: "none", padding: 0, cursor: "pointer", fontWeight: 500, flexShrink: 0 }}
               >
                 History →
               </button>

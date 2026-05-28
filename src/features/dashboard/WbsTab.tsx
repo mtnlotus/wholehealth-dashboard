@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import { EmptyState } from "../../components/EmptyState";
 import { GaugeArc } from "../../components/GaugeArc";
-import { useWbsObservations, type WbsObservation } from "../../hooks/useWbsObservations";
+import { useWbsObservations, wbsObservationsFromBundle, type WbsObservation } from "../../hooks/useWbsObservations";
 import { useSmartClient } from "../../hooks/useSmartClient";
 import { useAppStore } from "../../store/appStore";
 
@@ -119,52 +119,36 @@ function HistoryRow({ obs, isFirst }: { obs: WbsObservation; isFirst: boolean })
   );
 }
 
-/** Build a WbsObservation from phpData.wbs (note-parsed data). */
-function wbsFromStore(phpData: ReturnType<typeof useAppStore.getState>["phpData"]): WbsObservation | null {
-  if (!phpData?.wbs) return null;
-  const { wbs } = phpData;
-  return {
-    // Use the note's session date when available; fall back to today.
-    date: wbs.session_date ?? new Date().toISOString().slice(0, 10),
-    satisfied: wbs.satisfied,
-    involved: wbs.involved,
-    functioning: wbs.functioning,
-    average: wbs.average,
-  };
-}
-
 /**
- * Merge FHIR observations with a note-parsed observation.
- * FHIR is authoritative: if both sources share a date, the FHIR record wins.
- * Result is sorted most-recent first.
+ * Merge two WbsObservation arrays. `primary` is authoritative: on a date
+ * collision the primary record wins. Result is sorted most-recent-first.
  */
 function mergeObservations(
-  fhirObs: WbsObservation[],
-  storeObs: WbsObservation | null,
+  primary: WbsObservation[],
+  secondary: WbsObservation[],
 ): WbsObservation[] {
-  if (!storeObs) return fhirObs;
-  const fhirDates = new Set(fhirObs.map((o) => o.date));
-  const merged = fhirDates.has(storeObs.date)
-    ? fhirObs
-    : [...fhirObs, storeObs];
-  return merged.sort((a, b) => b.date.localeCompare(a.date));
+  const primaryDates = new Set(primary.map((o) => o.date));
+  const extras = secondary.filter((o) => !primaryDates.has(o.date));
+  return [...primary, ...extras].sort((a, b) => b.date.localeCompare(a.date));
 }
 
 export function WbsTab() {
   const client = useSmartClient();
-  const phpData = useAppStore((s) => s.phpData);
+  const fhirBundle = useAppStore((s) => s.fhirBundle);
   const patientId = client?.patient?.id ?? undefined;
   const isSmartMode = !!client;
 
   const { data: fhirWbs, isLoading } = useWbsObservations(patientId);
 
-  // Always merge both sources:
-  //   • FHIR observations (EHR queries) — authoritative, wins on date collision
-  //   • Note-parsed WBS (phpData.wbs) — from selected clinical notes
-  const storeObs = wbsFromStore(phpData);
+  // Extract all per-note WBS observations from the generated FHIR bundle.
+  // This covers both standalone (only source) and SMART mode (fills gaps in EHR data).
+  const bundleObs = wbsObservationsFromBundle(fhirBundle);
+
+  // Merge: EHR FHIR observations are authoritative (win on date collision);
+  // bundle observations from clinical notes fill in everything else.
   const observations: WbsObservation[] = isSmartMode
-    ? mergeObservations(fhirWbs ?? [], storeObs)
-    : mergeObservations([], storeObs);
+    ? mergeObservations(fhirWbs ?? [], bundleObs)
+    : bundleObs;
 
   const latest = observations[0];
   const prior = observations[1];
