@@ -1,15 +1,19 @@
-/** Colored horizontal progress bar for importance / confidence scores (0–10). */
+/** Colored horizontal progress bar for importance / confidence scores (0–10).
+ *  Uses a red→orange→green gradient track; the portion past the value is masked gray.
+ */
 
 interface ScoreBarProps {
   label: string;
   value: number;
 }
 
-function barColor(value: number): string {
-  if (value >= 8) return "#3d9a50";
-  if (value >= 6) return "#8bc34a";
-  if (value >= 4) return "#d4820a";
-  return "#d04040";
+function gradientBar(pct: number): string {
+  // Layer 1 (top): transparent up to pct%, then --color-border to hide gradient
+  // Layer 2 (bottom): full red→amber→green gradient
+  return [
+    `linear-gradient(to right, transparent ${pct}%, var(--color-border) ${pct}%)`,
+    "linear-gradient(to right, #d04040, #d4820a 50%, #3d9a50)",
+  ].join(", ");
 }
 
 export function ScoreBar({ label, value }: ScoreBarProps) {
@@ -29,24 +33,29 @@ export function ScoreBar({ label, value }: ScoreBarProps) {
         style={{
           flex: 1,
           height: 6,
-          background: "var(--color-border)",
           borderRadius: 99,
-          overflow: "hidden",
+          background: gradientBar(pct),
         }}
-      >
-        <div
-          style={{
-            height: "100%",
-            width: `${pct}%`,
-            background: barColor(value),
-            borderRadius: 99,
-            transition: "width 0.3s ease",
-          }}
-        />
-      </div>
+      />
       <span style={{ width: 14, textAlign: "right", fontWeight: 600, color: "var(--color-text)" }}>
         {value}
       </span>
     </div>
+  );
+}
+
+/** Compact fixed-width gradient bar — used in side-by-side readiness rows. */
+export function ReadinessBar({ value, width = 120 }: { value: number; width?: number }) {
+  const pct = Math.max(0, Math.min(10, value)) * 10;
+  return (
+    <div
+      style={{
+        width,
+        height: 6,
+        borderRadius: 99,
+        flexShrink: 0,
+        background: gradientBar(pct),
+      }}
+    />
   );
 }

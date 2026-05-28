@@ -1,8 +1,120 @@
+import type { Goal } from "coach-notes";
 import type { TabId } from "../../components/PatientHeader";
 import { EmptyState } from "../../components/EmptyState";
 import { GaugeArc } from "../../components/GaugeArc";
-import { ScoreBar } from "../../components/ScoreBar";
+import { ReadinessBar } from "../../components/ScoreBar";
 import { useAppStore } from "../../store/appStore";
+
+// ─── Goal date formatting ────────────────────────────────────────────────────
+function formatGoalDate(d: string | undefined): string {
+  if (!d) return "";
+  try {
+    return new Date(d + "T00:00:00").toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return d;
+  }
+}
+
+// ─── Status badge ────────────────────────────────────────────────────────────
+const STATUS_COLORS: Record<string, { border: string; color: string }> = {
+  active:    { border: "var(--color-active-badge)", color: "var(--color-active-badge)" },
+  "on-hold": { border: "#d4820a",                   color: "#d4820a" },
+  completed: { border: "var(--color-accent-blue)",  color: "var(--color-accent-blue)" },
+  cancelled: { border: "var(--color-text-muted)",   color: "var(--color-text-muted)" },
+};
+
+function StatusBadge({ status }: { status: string }) {
+  const c = STATUS_COLORS[status] ?? STATUS_COLORS.active;
+  return (
+    <span
+      style={{
+        padding: "2px 9px",
+        borderRadius: 99,
+        border: `1px solid ${c.border}`,
+        color: c.color,
+        fontSize: 11,
+        fontWeight: 600,
+        whiteSpace: "nowrap",
+        flexShrink: 0,
+      }}
+    >
+      {status.charAt(0).toUpperCase() + status.slice(1).replace("-", " ")}
+    </span>
+  );
+}
+
+// ─── Goal row (side-by-side readiness bars + dates) ──────────────────────────
+function GoalRow({ goal }: { goal: Goal }) {
+  const status = goal.lifecycle_status ?? "active";
+  const hasReadiness = goal.importance !== undefined || goal.confidence !== undefined;
+
+  const startLabel = goal.start_date ? `Started ${formatGoalDate(goal.start_date)}` : null;
+  const endLabel   = goal.end_date   ? `Target ${formatGoalDate(goal.end_date)}`   : null;
+  const dateStr    = [startLabel, endLabel].filter(Boolean).join("  ·  ");
+
+  return (
+    <div>
+      {/* Goal text */}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", marginBottom: "0.4rem" }}>
+        <span style={{ color: "var(--color-active-badge)", fontSize: 17, lineHeight: 1.1, flexShrink: 0 }}>◉</span>
+        <span style={{ fontWeight: 500, fontSize: 14, lineHeight: 1.5 }}>{goal.text}</span>
+      </div>
+
+      {/* Readiness row */}
+      {hasReadiness && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.625rem",
+            fontSize: 12,
+            color: "var(--color-text-muted)",
+            flexWrap: "wrap",
+            marginLeft: "1.5rem",
+          }}
+        >
+          {goal.importance !== undefined && (
+            <>
+              <span style={{ flexShrink: 0 }}>Importance</span>
+              <ReadinessBar value={goal.importance} />
+              <span style={{ fontWeight: 700, color: "var(--color-text)", flexShrink: 0 }}>
+                {goal.importance}
+              </span>
+            </>
+          )}
+          {goal.confidence !== undefined && (
+            <>
+              <span style={{ flexShrink: 0 }}>Confidence</span>
+              <ReadinessBar value={goal.confidence} />
+              <span style={{ fontWeight: 700, color: "var(--color-text)", flexShrink: 0 }}>
+                {goal.confidence}
+              </span>
+            </>
+          )}
+          <StatusBadge status={status} />
+        </div>
+      )}
+
+      {/* Dates */}
+      {dateStr && (
+        <div
+          style={{
+            marginLeft: "1.5rem",
+            marginTop: "0.3rem",
+            fontSize: 11,
+            color: "var(--color-text-muted)",
+          }}
+        >
+          {dateStr}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const card: React.CSSProperties = {
   background: "var(--color-bg-card)",
@@ -125,19 +237,11 @@ export function SummaryTab({ onTabChange }: Props) {
               Long-Term Whole Health Goals
             </div>
             {longTermGoals.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
                 {longTermGoals.map((goal, i) => (
                   <div key={i}>
-                    {i > 0 && <hr style={{ border: "none", borderTop: "1px solid var(--color-border-light)", margin: "0.75rem 0" }} />}
-                    <div style={{ fontWeight: 500, fontSize: 14, marginBottom: "0.5rem" }}>{goal.text}</div>
-                    {goal.importance !== undefined && (
-                      <ScoreBar label="Importance" value={goal.importance} />
-                    )}
-                    {goal.confidence !== undefined && (
-                      <div style={{ marginTop: "0.25rem" }}>
-                        <ScoreBar label="Confidence" value={goal.confidence} />
-                      </div>
-                    )}
+                    {i > 0 && <hr style={{ border: "none", borderTop: "1px solid var(--color-border-light)", margin: "0.875rem 0 0" }} />}
+                    <GoalRow goal={goal} />
                   </div>
                 ))}
               </div>
@@ -150,19 +254,11 @@ export function SummaryTab({ onTabChange }: Props) {
           <div style={card}>
             <div style={sectionLabel}>Short-Term Goals (Action Steps)</div>
             {shortTermGoals.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
                 {shortTermGoals.map((goal, i) => (
                   <div key={i}>
-                    {i > 0 && <hr style={{ border: "none", borderTop: "1px solid var(--color-border-light)", margin: "0.75rem 0" }} />}
-                    <div style={{ fontWeight: 500, fontSize: 14, marginBottom: "0.5rem" }}>{goal.text}</div>
-                    {goal.importance !== undefined && (
-                      <ScoreBar label="Importance" value={goal.importance} />
-                    )}
-                    {goal.confidence !== undefined && (
-                      <div style={{ marginTop: "0.25rem" }}>
-                        <ScoreBar label="Confidence" value={goal.confidence} />
-                      </div>
-                    )}
+                    {i > 0 && <hr style={{ border: "none", borderTop: "1px solid var(--color-border-light)", margin: "0.875rem 0 0" }} />}
+                    <GoalRow goal={goal} />
                   </div>
                 ))}
               </div>
