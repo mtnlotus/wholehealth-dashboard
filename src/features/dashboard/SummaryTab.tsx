@@ -306,10 +306,10 @@ export function SummaryTab({ onTabChange }: Props) {
             )}
           </div>
 
-          {/* MAP Alignment */}
+          {/* Additional Notes */}
           {phpData.discharge_plan && (
-            <div style={{ ...card, background: "var(--color-bg-blue-highlight)", border: "1px solid var(--color-tag-blue-bg)" }}>
-              <div style={{ ...sectionLabel, color: "var(--color-accent-blue)" }}>MAP Alignment</div>
+            <div style={card}>
+              <div style={sectionLabel}>Additional Notes</div>
               <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6 }}>{phpData.discharge_plan}</p>
             </div>
           )}
