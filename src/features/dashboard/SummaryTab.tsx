@@ -50,16 +50,7 @@ export function SummaryTab({ onTabChange }: Props) {
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           {/* MAP */}
           <div style={card}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <div style={sectionLabel}>Mission, Aspiration, Purpose (MAP)</div>
-              <button
-                type="button"
-                onClick={() => onTabChange("php")}
-                style={{ fontSize: 12, color: "var(--color-accent-blue)", background: "none", border: "none", padding: 0, cursor: "pointer", fontWeight: 500 }}
-              >
-                Edit
-              </button>
-            </div>
+            <div style={sectionLabel}>Mission, Aspiration, Purpose (MAP)</div>
             {phpData.map ? (
               <>
                 <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: "0 0 0.5rem", fontStyle: "italic" }}>
@@ -130,17 +121,8 @@ export function SummaryTab({ onTabChange }: Props) {
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           {/* Long-term goals */}
           <div style={{ ...card, border: "1.5px solid var(--color-accent-blue)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-              <div style={{ ...sectionLabel, color: "var(--color-accent-blue)" }}>
-                Long-Term Whole Health Goals
-              </div>
-              <button
-                type="button"
-                onClick={() => onTabChange("php")}
-                style={{ fontSize: 12, color: "var(--color-accent-blue)", background: "none", border: "none", padding: 0, cursor: "pointer", fontWeight: 500 }}
-              >
-                + Add
-              </button>
+            <div style={{ ...sectionLabel, color: "var(--color-accent-blue)" }}>
+              Long-Term Whole Health Goals
             </div>
             {longTermGoals.length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
@@ -166,16 +148,7 @@ export function SummaryTab({ onTabChange }: Props) {
 
           {/* Short-term goals */}
           <div style={card}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-              <div style={sectionLabel}>Short-Term Goals (Action Steps)</div>
-              <button
-                type="button"
-                onClick={() => onTabChange("php")}
-                style={{ fontSize: 12, color: "var(--color-accent-blue)", background: "none", border: "none", padding: 0, cursor: "pointer", fontWeight: 500 }}
-              >
-                + Add
-              </button>
-            </div>
+            <div style={sectionLabel}>Short-Term Goals (Action Steps)</div>
             {shortTermGoals.length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                 {shortTermGoals.map((goal, i) => (
