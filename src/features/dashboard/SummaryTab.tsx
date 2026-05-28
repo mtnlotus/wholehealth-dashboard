@@ -101,23 +101,24 @@ function GoalRow({ goal }: { goal: Goal }) {
               </span>
             </>
           )}
-          <StatusBadge status={status} />
         </div>
       )}
 
-      {/* Dates */}
-      {dateStr && (
-        <div
-          style={{
-            marginLeft: "1.5rem",
-            marginTop: "0.3rem",
-            fontSize: 11,
-            color: "var(--color-text-muted)",
-          }}
-        >
-          {dateStr}
-        </div>
-      )}
+      {/* Dates + status row */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          marginLeft: "1.5rem",
+          marginTop: "0.3rem",
+          fontSize: 11,
+          color: "var(--color-text-muted)",
+        }}
+      >
+        {dateStr && <span>{dateStr}</span>}
+        <StatusBadge status={status} />
+      </div>
     </div>
   );
 }
