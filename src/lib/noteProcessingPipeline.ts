@@ -30,6 +30,26 @@ export function processNotes(
   const phpNotes = sorted.map(rawNoteToPhpData);
   const phpData = mergeNotes(sorted);
   const fhirBundle = buildBundleFromNotes(phpNotes, sessionDate) as fhirR4.Bundle;
+
+  // Backfill start_date on merged goals from the per-note data.
+  // sorted is oldest-first, so the first note a goal appears in is its start date —
+  // matching the logic buildBundleFromNotes uses for Goal.startDate.
+  const goalFirstDate = new Map<string, string>();
+  for (const note of phpNotes) {
+    const noteDate = note.session_date ?? note.wbs?.session_date;
+    if (!noteDate) continue;
+    for (const goal of note.goals) {
+      const key = goal.text.slice(0, 60);
+      if (!goalFirstDate.has(key)) goalFirstDate.set(key, noteDate);
+    }
+  }
+  phpData.goals = phpData.goals.map((goal) => {
+    if (goal.start_date) return goal; // already set (e.g. from FHIR source)
+    const key = goal.text.slice(0, 60);
+    const startDate = goalFirstDate.get(key);
+    return startDate ? { ...goal, start_date: startDate } : goal;
+  });
+
   return { phpData, fhirBundle };
 }
 
