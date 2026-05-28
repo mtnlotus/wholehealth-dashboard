@@ -208,35 +208,35 @@ export function SummaryTab({ onTabChange }: Props) {
 
           {/* WBS */}
           <div style={card}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
-              <div>
-                <div style={sectionLabel}>Well-Being Signs</div>
-                {wbs?.session_date && (
-                  <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: -6 }}>
-                    {formatGoalDate(wbs.session_date)}
-                  </div>
-                )}
-              </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+              <div style={sectionLabel}>Well-Being Signs</div>
               <button
                 type="button"
                 onClick={() => onTabChange("wbs")}
-                style={{ fontSize: 12, color: "var(--color-accent-blue)", background: "none", border: "none", padding: 0, cursor: "pointer", fontWeight: 500, flexShrink: 0 }}
+                style={{ fontSize: 12, color: "var(--color-accent-blue)", background: "none", border: "none", padding: 0, cursor: "pointer", fontWeight: 500 }}
               >
                 History →
               </button>
             </div>
             {wbs ? (
-              <div style={{ display: "flex", justifyContent: "space-around" }}>
-                {wbs.satisfied !== undefined && (
-                  <GaugeArc value={wbs.satisfied} label="Satisfied" size={80} />
+              <>
+                <div style={{ display: "flex", justifyContent: "space-around" }}>
+                  {wbs.satisfied !== undefined && (
+                    <GaugeArc value={wbs.satisfied} label="Satisfied" size={80} />
+                  )}
+                  {wbs.involved !== undefined && (
+                    <GaugeArc value={wbs.involved} label="Involved" size={80} />
+                  )}
+                  {wbs.functioning !== undefined && (
+                    <GaugeArc value={wbs.functioning} label="Functioning" size={80} />
+                  )}
+                </div>
+                {wbs.session_date && (
+                  <p style={{ margin: "0.5rem 0 0", fontSize: 11, color: "var(--color-text-muted)" }}>
+                    Recorded {formatGoalDate(wbs.session_date)}
+                  </p>
                 )}
-                {wbs.involved !== undefined && (
-                  <GaugeArc value={wbs.involved} label="Involved" size={80} />
-                )}
-                {wbs.functioning !== undefined && (
-                  <GaugeArc value={wbs.functioning} label="Functioning" size={80} />
-                )}
-              </div>
+              </>
             ) : (
               <EmptyState message="No Well-Being Signs recorded." />
             )}
