@@ -8,12 +8,12 @@ interface Tab {
 }
 
 const TABS: Tab[] = [
+  { id: "notes", label: "Clinical Notes" },
   { id: "summary", label: "Summary" },
   { id: "php", label: "Personal Health Plan" },
   { id: "records", label: "Health Records" },
-  { id: "inventory", label: "Health Inventory" },
   { id: "wbs", label: "Well-Being Signs" },
-  { id: "notes", label: "Clinical Notes" },
+  { id: "inventory", label: "Health Inventory" },
 ];
 
 interface Props {

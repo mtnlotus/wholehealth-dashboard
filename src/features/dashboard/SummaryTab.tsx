@@ -178,8 +178,13 @@ export function SummaryTab({ onTabChange }: Props) {
     );
   }
 
-  const longTermGoals = phpData.goals.filter((g) => g.goal_type === "long-term");
-  const shortTermGoals = phpData.goals.filter((g) => g.goal_type === "short-term");
+  const byStartDateDesc = (a: { start_date?: string }, b: { start_date?: string }) =>
+    (b.start_date ?? "").localeCompare(a.start_date ?? "");
+  const mostRecent = <T extends { start_date?: string }>(goals: T[]): T[] =>
+    goals.slice().sort(byStartDateDesc).slice(0, 1);
+
+  const longTermGoals = mostRecent(phpData.goals.filter((g) => g.goal_type === "long-term"));
+  const shortTermGoals = mostRecent(phpData.goals.filter((g) => g.goal_type === "short-term"));
   const wbs = phpData.wbs;
 
   return (

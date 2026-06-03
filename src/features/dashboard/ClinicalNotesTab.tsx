@@ -60,6 +60,13 @@ function TypeBadge({ type }: { type: string }) {
   );
 }
 
+function getAuthor(dr: fhirR4.DocumentReference): string {
+  const display = dr.author?.[0]?.display;
+  if (display) return display;
+  // Fallback: last-name-first "Family, Given" → "Given Family"
+  return "";
+}
+
 function toPdfDataUri(binaryString: string): string | null {
   try {
     return `data:application/pdf;base64,${btoa(binaryString)}`;
@@ -81,7 +88,9 @@ export function ClinicalNotesTab() {
   const binaryCache = useAppStore((s) => s.binaryCache);
   const navigate = useNavigate();
 
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const selectedIds = useAppStore((s) => s.selectedNoteIds);
+  const setSelectedIds = useAppStore((s) => s.setSelectedNoteIds);
+  const [fhirVisible, setFhirVisible] = useState<Set<string>>(new Set());
   const [parsing, setParsing] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState<Record<string, boolean>>({});
@@ -105,12 +114,10 @@ export function ClinicalNotesTab() {
   }, [allNotes, typeFilter, search]);
 
   function toggleNote(id: string) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedIds(next);
   }
 
   async function handleParseSelected() {
@@ -147,7 +154,7 @@ export function ClinicalNotesTab() {
 
       setPhpData(phpData);
       setFhirBundle(fhirBundle);
-      navigate("/app?tab=php");
+      navigate("/app?tab=summary");
     } catch (err) {
       setParseError(String(err));
     } finally {
@@ -270,7 +277,7 @@ export function ClinicalNotesTab() {
               gap: "0.3rem",
             }}
           >
-            {parsing ? "Processing…" : "View in Health Plan →"}
+            {parsing ? "Processing…" : "Update Health Plan →"}
           </button>
         </div>
       )}
@@ -306,7 +313,9 @@ export function ClinicalNotesTab() {
                 <th style={{ padding: "0.5rem 0.75rem", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-text-muted)", textAlign: "left", borderBottom: "1px solid var(--color-border)" }}>Date</th>
                 <th style={{ padding: "0.5rem 0.75rem", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-text-muted)", textAlign: "left", borderBottom: "1px solid var(--color-border)" }}>Type</th>
                 <th style={{ padding: "0.5rem 0.75rem", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-text-muted)", textAlign: "left", borderBottom: "1px solid var(--color-border)" }}>Subject / Preview</th>
+                <th style={{ padding: "0.5rem 0.75rem", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-text-muted)", textAlign: "left", borderBottom: "1px solid var(--color-border)" }}>Author</th>
                 <th style={{ padding: "0.5rem 0.75rem", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-text-muted)", textAlign: "left", borderBottom: "1px solid var(--color-border)" }}>Content</th>
+                <th style={{ padding: "0.5rem 0.75rem", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-text-muted)", textAlign: "left", borderBottom: "1px solid var(--color-border)" }}>FHIR Data</th>
               </tr>
             </thead>
             <tbody>
@@ -316,8 +325,11 @@ export function ClinicalNotesTab() {
                 const checked = selectedIds.has(id);
                 const att = selectAttachment(dr);
                 const attachUrl = att?.url;
-                const contentKey = attachUrl ?? (att?.data && id ? `embedded:${id}` : undefined);
+                // Use id when available; fall back to row index so inline-data rows always get a key
+                const embeddedKey = att?.data ? `embedded:${id || i}` : undefined;
+                const contentKey = attachUrl ?? embeddedKey;
                 const isViewVisible = contentKey ? binary.isVisible(contentKey) : false;
+                const isFhirVisible = fhirVisible.has(id);
                 const noteType = getNoteType(dr);
 
                 return (
@@ -350,6 +362,9 @@ export function ClinicalNotesTab() {
                           <div style={{ fontWeight: checked ? 600 : 400, fontSize: 13 }}>{meta.title}</div>
                         </label>
                       </td>
+                      <td style={{ padding: "0.5rem 0.75rem", fontSize: 13, color: "var(--color-text-muted)", whiteSpace: "nowrap" }}>
+                        {getAuthor(dr) || "—"}
+                      </td>
                       <td style={{ padding: "0.5rem 0.75rem" }}>
                         {contentKey && (
                           <button
@@ -366,15 +381,49 @@ export function ClinicalNotesTab() {
                             onClick={() => binary.toggle(contentKey, client, att?.data)}
                             disabled={binary.loading[contentKey]}
                           >
-                            {binary.loading[contentKey] ? "Loading…" : isViewVisible ? "Hide" : "View"}
+                            {binary.loading[contentKey] ? "Loading…" : isViewVisible ? "Hide" : "Show"}
                           </button>
                         )}
                       </td>
+                      <td style={{ padding: "0.5rem 0.75rem" }}>
+                        <button
+                          type="button"
+                          style={{
+                            fontSize: 12,
+                            padding: "3px 10px",
+                            cursor: "pointer",
+                            background: isFhirVisible ? "var(--color-bg-highlight)" : "var(--color-bg-card-warm)",
+                            border: "1px solid var(--color-border)",
+                            borderRadius: 99,
+                            color: "var(--color-text-muted)",
+                          }}
+                          onClick={() =>
+                            setFhirVisible((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(id)) next.delete(id);
+                              else next.add(id);
+                              return next;
+                            })
+                          }
+                        >
+                          {isFhirVisible ? "Hide" : "Show"}
+                        </button>
+                      </td>
                     </tr>
+
+                    {isFhirVisible && (
+                      <tr key={`${id}-fhir`}>
+                        <td colSpan={7} style={{ padding: "0.5rem 1rem 1rem", background: "#fafafa" }}>
+                          <pre style={{ margin: 0, fontSize: 12, whiteSpace: "pre-wrap", wordBreak: "break-word", maxHeight: 400, overflow: "auto", background: "#fff", border: "1px solid var(--color-border)", padding: "0.75rem", borderRadius: "var(--radius-md)" }}>
+                            {JSON.stringify(dr, null, 2)}
+                          </pre>
+                        </td>
+                      </tr>
+                    )}
 
                     {contentKey && isViewVisible && (
                       <tr key={`${id}-content`}>
-                        <td colSpan={5} style={{ padding: "0.5rem 1rem 1rem", background: "#fafafa" }}>
+                        <td colSpan={7} style={{ padding: "0.5rem 1rem 1rem", background: "#fafafa" }}>
                           {binary.errors[contentKey] ? (
                             <span style={{ color: "#d04040", fontSize: 12 }}>{binary.errors[contentKey]}</span>
                           ) : att?.contentType?.startsWith("text/html") ? (

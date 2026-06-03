@@ -16,10 +16,10 @@ function isValidTab(s: string | null): s is TabId {
 export function DashboardLayout() {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get("tab");
-  const activeTab: TabId = isValidTab(rawTab) ? rawTab : "summary";
+  const activeTab: TabId = isValidTab(rawTab) ? rawTab : "notes";
 
   function handleTabChange(tab: TabId) {
-    setSearchParams(tab === "summary" ? {} : { tab });
+    setSearchParams(tab === "notes" ? {} : { tab });
   }
 
   return (

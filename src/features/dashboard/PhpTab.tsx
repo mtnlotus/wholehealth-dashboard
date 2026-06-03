@@ -1,9 +1,84 @@
 import { useState } from "react";
+import type { Goal } from "coach-notes";
 import { EmptyState } from "../../components/EmptyState";
-import { GaugeArc } from "../../components/GaugeArc";
-import { ScoreBar } from "../../components/ScoreBar";
+import { ReadinessBar } from "../../components/ScoreBar";
 import { SHCSelectionModal } from "../sharing/SHCSelectionModal";
 import { useAppStore } from "../../store/appStore";
+
+function formatGoalDate(d: string | undefined): string {
+  if (!d) return "";
+  try {
+    return new Date(d + "T00:00:00").toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return d;
+  }
+}
+
+function GoalRow({ goal }: { goal: Goal }) {
+  const hasReadiness = goal.importance !== undefined || goal.confidence !== undefined;
+  const startLabel = goal.start_date ? `Started ${formatGoalDate(goal.start_date)}` : null;
+  const endLabel   = goal.end_date   ? `Target ${formatGoalDate(goal.end_date)}`   : null;
+  const dateStr    = [startLabel, endLabel].filter(Boolean).join("  ·  ");
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", marginBottom: "0.4rem" }}>
+        <span style={{ color: "var(--color-active-badge)", fontSize: 17, lineHeight: 1.1, flexShrink: 0 }}>◉</span>
+        <span style={{ fontWeight: 500, fontSize: 14, lineHeight: 1.5 }}>{goal.text}</span>
+      </div>
+      {hasReadiness && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.625rem",
+            fontSize: 12,
+            color: "var(--color-text-muted)",
+            flexWrap: "wrap",
+            marginLeft: "1.5rem",
+          }}
+        >
+          {goal.importance !== undefined && (
+            <>
+              <span style={{ flexShrink: 0 }}>Importance</span>
+              <ReadinessBar value={goal.importance} />
+              <span style={{ fontWeight: 700, color: "var(--color-text)", flexShrink: 0 }}>
+                {goal.importance}
+              </span>
+            </>
+          )}
+          {goal.confidence !== undefined && (
+            <>
+              <span style={{ flexShrink: 0 }}>Confidence</span>
+              <ReadinessBar value={goal.confidence} />
+              <span style={{ fontWeight: 700, color: "var(--color-text)", flexShrink: 0 }}>
+                {goal.confidence}
+              </span>
+            </>
+          )}
+        </div>
+      )}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          marginLeft: "1.5rem",
+          marginTop: "0.3rem",
+          fontSize: 11,
+          color: "var(--color-text-muted)",
+        }}
+      >
+        {dateStr && <span>{dateStr}</span>}
+        <StatusBadge status={goal.lifecycle_status ?? "active"} />
+      </div>
+    </div>
+  );
+}
 
 const card: React.CSSProperties = {
   background: "var(--color-bg-card)",
@@ -124,10 +199,12 @@ export function PhpTab() {
     );
   }
 
-  const longTermGoals = phpData.goals.filter((g) => g.goal_type === "long-term");
-  const shortTermGoals = phpData.goals.filter((g) => g.goal_type === "short-term");
+  const byStartDateDesc = (a: { start_date?: string }, b: { start_date?: string }) =>
+    (b.start_date ?? "").localeCompare(a.start_date ?? "");
+  const longTermGoals = phpData.goals.filter((g) => g.goal_type === "long-term").sort(byStartDateDesc);
+  const shortTermGoals = phpData.goals.filter((g) => g.goal_type === "short-term").sort(byStartDateDesc);
   const activeCount = (goals: typeof longTermGoals) =>
-    goals.filter((g) => g.lifecycle_status === "active" || !g.lifecycle_status).length;
+    goals.filter((g) => !g.lifecycle_status || !["completed", "cancelled", "on-hold"].includes(g.lifecycle_status)).length;
 
   return (
     <div style={{ padding: "1rem 1.25rem", maxWidth: 820, display: "flex", flexDirection: "column", gap: "0.75rem" }}>
@@ -185,26 +262,7 @@ export function PhpTab() {
                   padding: "0.875rem",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem", marginBottom: "0.5rem" }}>
-                  <div style={{ fontWeight: 500, fontSize: 14, lineHeight: 1.5 }}>{goal.text}</div>
-                  <StatusBadge status={goal.lifecycle_status ?? "active"} />
-                </div>
-                {(goal.importance !== undefined || goal.confidence !== undefined) && (
-                  <div style={{ display: "flex", gap: "2rem", marginTop: "0.75rem" }}>
-                    {goal.importance !== undefined && (
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.25rem" }}>
-                        <GaugeArc value={goal.importance} size={64} />
-                        <span style={{ fontSize: 11, color: "var(--color-text-muted)" }}>Importance</span>
-                      </div>
-                    )}
-                    {goal.confidence !== undefined && (
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.25rem" }}>
-                        <GaugeArc value={goal.confidence} size={64} />
-                        <span style={{ fontSize: 11, color: "var(--color-text-muted)" }}>Confidence</span>
-                      </div>
-                    )}
-                  </div>
-                )}
+                <GoalRow goal={goal} />
               </div>
             ))}
           </div>
@@ -238,18 +296,7 @@ export function PhpTab() {
                   padding: "0.875rem",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem", marginBottom: "0.5rem" }}>
-                  <div style={{ fontWeight: 500, fontSize: 14, lineHeight: 1.5 }}>{goal.text}</div>
-                  <StatusBadge status={goal.lifecycle_status ?? "active"} />
-                </div>
-                {goal.importance !== undefined && (
-                  <ScoreBar label="Importance" value={goal.importance} />
-                )}
-                {goal.confidence !== undefined && (
-                  <div style={{ marginTop: "0.35rem" }}>
-                    <ScoreBar label="Confidence" value={goal.confidence} />
-                  </div>
-                )}
+                <GoalRow goal={goal} />
               </div>
             ))}
           </div>
