@@ -273,9 +273,11 @@ export function HealthRecordsTab() {
       >
         <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
           <span style={{ color: "var(--color-accent-blue)" }}>ℹ</span>
-          <span style={{ color: "var(--color-accent-blue)", fontWeight: 600 }}>Live FHIR data.</span>
+          <span style={{ color: "var(--color-accent-blue)", fontWeight: 600 }}>Live EHR data.</span>
           <span style={{ color: "var(--color-text-muted)" }}>
-            Conditions and Medications are queried from the EHR and shown most-recent first. Read-only view.
+            {[goalsSupported && "Goals", conditionsSupported && "Conditions", medicationsSupported && "Medications"]
+              .filter(Boolean)
+              .join(", ")} queried from the EHR and shown most-recent first. Read-only view.
           </span>
         </div>
       </div>
