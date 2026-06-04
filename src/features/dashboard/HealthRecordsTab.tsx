@@ -5,6 +5,7 @@ import { useConditions } from "../../hooks/useConditions";
 import { useGoals } from "../../hooks/useGoals";
 import { useMedications } from "../../hooks/useMedications";
 import { useSmartClient } from "../../hooks/useSmartClient";
+import { useSmartScopes } from "../../hooks/useSmartScopes";
 
 function formatDate(dateStr: string | undefined | Date): string {
   if (!dateStr) return "—";
@@ -225,6 +226,11 @@ export function HealthRecordsTab() {
   const patientId = client?.patient?.id ?? undefined;
   const isSmartMode = !!client;
 
+  const { hasResourceScope } = useSmartScopes();
+  const goalsSupported = hasResourceScope("Goal");
+  const conditionsSupported = hasResourceScope("Condition");
+  const medicationsSupported = hasResourceScope("MedicationRequest");
+
   const [goalActiveOnly, setGoalActiveOnly] = useState(true);
   const [condActiveOnly, setCondActiveOnly] = useState(true);
   const [medActiveOnly, setMedActiveOnly] = useState(true);
@@ -239,9 +245,9 @@ export function HealthRecordsTab() {
     });
   }
 
-  const { data: goals = [], isLoading: goalsLoading } = useGoals(patientId, goalActiveOnly);
-  const { data: conditions = [], isLoading: conditionsLoading } = useConditions(patientId, condActiveOnly);
-  const { data: medications = [], isLoading: medicationsLoading } = useMedications(patientId, medActiveOnly);
+  const { data: goals = [], isLoading: goalsLoading } = useGoals(goalsSupported ? patientId : undefined, goalActiveOnly);
+  const { data: conditions = [], isLoading: conditionsLoading } = useConditions(conditionsSupported ? patientId : undefined, condActiveOnly);
+  const { data: medications = [], isLoading: medicationsLoading } = useMedications(medicationsSupported ? patientId : undefined, medActiveOnly);
 
   if (!isSmartMode) {
     return (
@@ -279,7 +285,7 @@ export function HealthRecordsTab() {
       </div>
 
       {/* Clinical Goals */}
-      <div
+      {goalsSupported && <div
         style={{
           background: "var(--color-bg-card)",
           borderRadius: "var(--radius-lg)",
@@ -350,10 +356,10 @@ export function HealthRecordsTab() {
             </tbody>
           </table>
         )}
-      </div>
+      </div>}
 
       {/* Conditions */}
-      <div
+      {conditionsSupported && <div
         style={{
           background: "var(--color-bg-card)",
           borderRadius: "var(--radius-lg)",
@@ -420,10 +426,10 @@ export function HealthRecordsTab() {
             </tbody>
           </table>
         )}
-      </div>
+      </div>}
 
       {/* Medications */}
-      <div
+      {medicationsSupported && <div
         style={{
           background: "var(--color-bg-card)",
           borderRadius: "var(--radius-lg)",
@@ -494,7 +500,7 @@ export function HealthRecordsTab() {
             </tbody>
           </table>
         )}
-      </div>
+      </div>}
     </div>
   );
 }
