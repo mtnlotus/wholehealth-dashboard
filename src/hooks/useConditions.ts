@@ -5,7 +5,7 @@ import { useSmartClient } from "./useSmartClient";
 
 interface FhirSearchBundle {
   resourceType: "Bundle";
-  entry?: Array<{ resource?: fhirR4.Condition }>;
+  entry?: Array<{ resource?: fhirR4.Condition | fhirR4.OperationOutcome }>;
 }
 
 export function useConditions(patientId: string | undefined, activeOnly = true) {
@@ -17,11 +17,11 @@ export function useConditions(patientId: string | undefined, activeOnly = true) 
       const statusParam = activeOnly ? "&clinical-status=active" : "";
       const bundle = await fhirRequest<FhirSearchBundle>(
         client!,
-        `Condition?patient=${patientId}${statusParam}&category=problem-list-item&_sort=-recorded-date`,
+        `Condition?patient=${patientId}${statusParam}&category=problem-list-item`,
       );
       return (bundle.entry ?? [])
         .map((e) => e.resource)
-        .filter((r): r is fhirR4.Condition => !!r)
+        .filter((r): r is fhirR4.Condition => r?.resourceType === "Condition")
         .filter((r) => {
           if (!activeOnly) return true;
           const status = r.clinicalStatus?.coding?.[0]?.code;

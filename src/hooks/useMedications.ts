@@ -5,7 +5,7 @@ import { useSmartClient } from "./useSmartClient";
 
 interface FhirSearchBundle {
   resourceType: "Bundle";
-  entry?: Array<{ resource?: fhirR4.MedicationRequest | fhirR4.Medication }>;
+  entry?: Array<{ resource?: fhirR4.MedicationRequest | fhirR4.Medication | fhirR4.OperationOutcome }>;
 }
 
 export function useMedications(patientId: string | undefined, activeOnly = true) {
@@ -17,7 +17,7 @@ export function useMedications(patientId: string | undefined, activeOnly = true)
       const statusParam = activeOnly ? "&status=active" : "";
       const bundle = await fhirRequest<FhirSearchBundle>(
         client!,
-        `MedicationRequest?patient=${patientId}${statusParam}&_sort=-authored-on&_include=MedicationRequest:medication`,
+        `MedicationRequest?patient=${patientId}${statusParam}&_include=MedicationRequest:medication`,
       );
 
       // Build a lookup of Medication resources by id (from _include)
