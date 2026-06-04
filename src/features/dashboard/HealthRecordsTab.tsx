@@ -141,10 +141,9 @@ interface SectionHeaderProps {
   total: number;
   activeOnly: boolean;
   onToggle: (activeOnly: boolean) => void;
-  fhirType: string;
 }
 
-function SectionHeader({ title, total, activeOnly, onToggle, fhirType }: SectionHeaderProps) {
+function SectionHeader({ title, total, activeOnly, onToggle }: SectionHeaderProps) {
   return (
     <div
       style={{
@@ -214,9 +213,6 @@ function SectionHeader({ title, total, activeOnly, onToggle, fhirType }: Section
           </button>
         </div>
       </div>
-      <span style={{ fontSize: 11, color: "var(--color-text-muted)" }}>
-        FHIR · {fhirType}
-      </span>
     </div>
   );
 }
@@ -299,7 +295,6 @@ export function HealthRecordsTab() {
           total={goals.length}
           activeOnly={goalActiveOnly}
           onToggle={setGoalActiveOnly}
-          fhirType="Goal"
         />
         {goalsLoading ? (
           <div style={{ padding: "2rem", textAlign: "center", color: "var(--color-text-muted)", fontSize: 13 }}>
@@ -373,7 +368,6 @@ export function HealthRecordsTab() {
           total={conditions.length}
           activeOnly={condActiveOnly}
           onToggle={setCondActiveOnly}
-          fhirType="Condition"
         />
         {conditionsLoading ? (
           <div style={{ padding: "2rem", textAlign: "center", color: "var(--color-text-muted)", fontSize: 13 }}>
@@ -443,7 +437,6 @@ export function HealthRecordsTab() {
           total={medications.length}
           activeOnly={medActiveOnly}
           onToggle={setMedActiveOnly}
-          fhirType="MedicationRequest"
         />
         {medicationsLoading ? (
           <div style={{ padding: "2rem", textAlign: "center", color: "var(--color-text-muted)", fontSize: 13 }}>
