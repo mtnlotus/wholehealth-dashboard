@@ -52,7 +52,8 @@ export function useMedications(patientId: string | undefined, activeOnly = true)
             };
           }
           return r;
-        });
+        })
+        .sort((a, b) => String(b.authoredOn ?? "").localeCompare(String(a.authoredOn ?? "")));
     },
     staleTime: 5 * 60 * 1000,
   });

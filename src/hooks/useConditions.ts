@@ -26,6 +26,11 @@ export function useConditions(patientId: string | undefined, activeOnly = true) 
           if (!activeOnly) return true;
           const status = r.clinicalStatus?.coding?.[0]?.code;
           return !!status && status !== "unknown";
+        })
+        .sort((a, b) => {
+          const da = String(a.recordedDate ?? a.onsetDateTime ?? "");
+          const db = String(b.recordedDate ?? b.onsetDateTime ?? "");
+          return db.localeCompare(da);
         });
     },
     staleTime: 5 * 60 * 1000,
