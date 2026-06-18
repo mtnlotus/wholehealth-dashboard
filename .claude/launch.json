@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "design-preview",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "9876", "--directory", "/Users/dcarlson/Downloads"],
+      "port": 9876
+    },
+    {
+      "name": "dashboard",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev"],
+      "port": 5173
+    }
+  ]
+}
