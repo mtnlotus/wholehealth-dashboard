@@ -41,6 +41,8 @@ export async function readDocxBuffer(buffer: ArrayBuffer): Promise<string[]> {
     attributeNamePrefix: "@_",
     parseAttributeValue: false,
     textNodeName: "#text",
+    trimValues: false,     // preserve leading/trailing spaces inside <w:t> nodes (e.g. xml:space="preserve")
+    parseTagValue: false,  // keep all text content as strings; prevents number coercion
     isArray: (name) => name === "w:p" || name === "w:r",
   });
 
@@ -50,7 +52,7 @@ export async function readDocxBuffer(buffer: ArrayBuffer): Promise<string[]> {
 
   const paragraphs = body["w:p"] ?? [];
   const paras = Array.isArray(paragraphs) ? paragraphs : [paragraphs];
-  return paras.map(extractParagraphText);
+  return paras.map((p) => extractParagraphText(p).trim());
 }
 
 export function readTextContent(text: string): string[] {
