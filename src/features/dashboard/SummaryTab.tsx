@@ -276,8 +276,8 @@ export function SummaryTab({ onTabChange }: Props) {
         {/* Right column */}
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           {/* Long-term goals */}
-          <div style={{ ...card, border: "1.5px solid var(--color-accent-blue)" }}>
-            <div style={{ ...sectionLabel, color: "var(--color-accent-blue)" }}>
+          <div style={card}>
+            <div style={sectionLabel}>
               Long-Term Whole Health Goals
             </div>
             {longTermGoals.length > 0 ? (

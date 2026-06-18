@@ -7,7 +7,6 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer,
 } from "recharts";
 import { EmptyState } from "../../components/EmptyState";
 import { GaugeArc } from "../../components/GaugeArc";
@@ -22,6 +21,24 @@ const card: React.CSSProperties = {
   boxShadow: "var(--shadow-card)",
   padding: "1rem",
 };
+
+const WBS_QUESTIONS = [
+  {
+    key: "satisfied" as const,
+    bold: "Fully satisfied",
+    rest: "with how these things are going?",
+  },
+  {
+    key: "involved" as const,
+    bold: "Regularly involved",
+    rest: "in things that are important to you?",
+  },
+  {
+    key: "functioning" as const,
+    bold: "Functioning your best",
+    rest: "in the most important things you do?",
+  },
+];
 
 function formatDate(dateStr: string): string {
   try {
@@ -46,7 +63,55 @@ function formatShortDate(dateStr: string): string {
   }
 }
 
-function HistoryRow({ obs, isFirst }: { obs: WbsObservation; isFirst: boolean }) {
+function chartWidth(pointCount: number): number {
+  if (pointCount <= 3) return 300;
+  if (pointCount <= 6) return 420;
+  return 560;
+}
+
+function ScoreRow({
+  value,
+  prior,
+  bold,
+  rest,
+  gaugeSize,
+  compact,
+}: {
+  value: number | undefined;
+  prior?: number;
+  bold: string;
+  rest: string;
+  gaugeSize: number;
+  compact?: boolean;
+}) {
+  if (value === undefined) return null;
+  const delta = prior !== undefined ? value - prior : undefined;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "0.875rem" }}>
+      <div style={{ flexShrink: 0 }}>
+        <GaugeArc value={value} size={gaugeSize} />
+      </div>
+      <div>
+        {compact ? (
+          <span style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+            <strong style={{ color: "var(--color-primary)" }}>{bold}</strong> {rest}
+          </span>
+        ) : (
+          <span style={{ fontSize: 14, lineHeight: 1.4 }}>
+            <strong>{bold}</strong> {rest}
+          </span>
+        )}
+        {delta !== undefined && (
+          <div style={{ fontSize: 11, color: delta >= 0 ? "var(--color-active-badge)" : "#d04040", marginTop: 2 }}>
+            {delta > 0 ? "+" : ""}{delta} from prior
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function HistoryRow({ obs, prior, isFirst }: { obs: WbsObservation; prior?: WbsObservation; isFirst: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const avg = obs.average?.toFixed(1);
 
@@ -72,18 +137,18 @@ function HistoryRow({ obs, isFirst }: { obs: WbsObservation; isFirst: boolean })
         </span>
         <div style={{ display: "flex", gap: "1.5rem", flex: 1 }}>
           {obs.satisfied !== undefined && (
-            <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
-              <GaugeArc value={obs.satisfied} size={36} /> Satisfied
+            <span style={{ fontSize: 12, color: "var(--color-text-muted)", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+              <GaugeArc value={obs.satisfied} size={52} /> Satisfied
             </span>
           )}
           {obs.involved !== undefined && (
-            <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
-              <GaugeArc value={obs.involved} size={36} /> Involved
+            <span style={{ fontSize: 12, color: "var(--color-text-muted)", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+              <GaugeArc value={obs.involved} size={52} /> Involved
             </span>
           )}
           {obs.functioning !== undefined && (
-            <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
-              <GaugeArc value={obs.functioning} size={36} /> Functioning
+            <span style={{ fontSize: 12, color: "var(--color-text-muted)", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+              <GaugeArc value={obs.functioning} size={52} /> Functioning
             </span>
           )}
         </div>
@@ -97,22 +162,21 @@ function HistoryRow({ obs, isFirst }: { obs: WbsObservation; isFirst: boolean })
         </span>
       </button>
       {expanded && (
-        <div style={{ padding: "0.75rem 1rem 1rem", display: "flex", gap: "2rem" }}>
-          {obs.satisfied !== undefined && (
-            <div style={{ textAlign: "center" }}>
-              <GaugeArc value={obs.satisfied} label="Satisfied" size={80} />
-            </div>
-          )}
-          {obs.involved !== undefined && (
-            <div style={{ textAlign: "center" }}>
-              <GaugeArc value={obs.involved} label="Involved" size={80} />
-            </div>
-          )}
-          {obs.functioning !== undefined && (
-            <div style={{ textAlign: "center" }}>
-              <GaugeArc value={obs.functioning} label="Functioning" size={80} />
-            </div>
-          )}
+        <div style={{ padding: "0.5rem 1rem 1rem 1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <div style={{ fontSize: 12, color: "var(--color-text-muted)", fontStyle: "italic", marginBottom: "0.25rem" }}>
+            Over the past month, on average how often have you been:
+          </div>
+          {WBS_QUESTIONS.map((q) => (
+            <ScoreRow
+              key={q.key}
+              value={obs[q.key]}
+              prior={prior?.[q.key]}
+              bold={q.bold}
+              rest={q.rest}
+              gaugeSize={56}
+              compact
+            />
+          ))}
         </div>
       )}
     </div>
@@ -140,12 +204,8 @@ export function WbsTab() {
 
   const { data: fhirWbs, isLoading } = useWbsObservations(patientId);
 
-  // Extract all per-note WBS observations from the generated FHIR bundle.
-  // This covers both standalone (only source) and SMART mode (fills gaps in EHR data).
   const bundleObs = wbsObservationsFromBundle(fhirBundle);
 
-  // Merge: EHR FHIR observations are authoritative (win on date collision);
-  // bundle observations from clinical notes fill in everything else.
   const observations: WbsObservation[] = isSmartMode
     ? mergeObservations(fhirWbs ?? [], bundleObs)
     : bundleObs;
@@ -166,6 +226,9 @@ export function WbsTab() {
       Involved: o.involved,
       Functioning: o.functioning,
     }));
+
+  const showChart = chartData.length >= 2;
+  const cWidth = chartWidth(chartData.length);
 
   if (isLoading) {
     return (
@@ -192,7 +255,7 @@ export function WbsTab() {
 
   return (
     <div style={{ padding: "1rem 1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-      {/* Sub-tabs */}
+      {/* Sub-tabs / count */}
       <div style={{ display: "flex", gap: "0.5rem", fontSize: 13 }}>
         <span
           style={{
@@ -203,30 +266,31 @@ export function WbsTab() {
             fontWeight: 600,
           }}
         >
-          Signs
+          Well-Being Signs
         </span>
         <span style={{ color: "var(--color-text-muted)", display: "flex", alignItems: "center", marginLeft: "0.5rem" }}>
           {observations.length} assessment{observations.length !== 1 ? "s" : ""} recorded
         </span>
       </div>
 
-      {/* Trend chart (only with 2+ data points) */}
-      {chartData.length >= 2 && (
-        <div style={card}>
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "var(--color-primary)",
-              marginBottom: "0.75rem",
-            }}
-          >
-            Trend Over Time
-          </div>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={chartData} margin={{ top: 4, right: 16, left: -16, bottom: 4 }}>
+      {/* Trend chart + Most recent — side by side */}
+      <div style={{ display: "flex", gap: "1rem", alignItems: "stretch", flexWrap: "wrap" }}>
+        {/* Trend chart */}
+        {showChart && (
+          <div style={{ ...card, flexShrink: 0, width: cWidth }}>
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                color: "var(--color-primary)",
+                marginBottom: "0.75rem",
+              }}
+            >
+              Trend Over Time
+            </div>
+            <LineChart width={cWidth - 32} height={240} data={chartData} margin={{ top: 4, right: 16, left: -16, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-light)" />
               <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--color-text-muted)" }} />
               <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: "var(--color-text-muted)" }} />
@@ -243,66 +307,51 @@ export function WbsTab() {
               <Line type="monotone" dataKey="Involved" stroke="#1a5fa8" strokeWidth={2} dot={{ r: 4 }} />
               <Line type="monotone" dataKey="Functioning" stroke="#d4820a" strokeWidth={2} dot={{ r: 4 }} />
             </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+          </div>
+        )}
 
-      {/* Most recent assessment */}
-      {latest && (
-        <div
-          style={{
-            ...card,
-            background: "var(--color-bg-highlight)",
-            border: "1px solid var(--color-tag-green-bg)",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 15 }}>Most Recent Assessment</div>
-              <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>
-                {formatDate(latest.date)}
+        {/* Most recent assessment */}
+        {latest && (
+          <div
+            style={{
+              ...card,
+              background: "var(--color-bg-highlight)",
+              border: "1px solid var(--color-tag-green-bg)",
+              flex: 1,
+              minWidth: 260,
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.625rem" }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>Most Recent Assessment</div>
+                <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>
+                  {formatDate(latest.date)}
+                </div>
               </div>
+              {avgDiff !== undefined && (
+                <span style={{ fontWeight: 600, fontSize: 13, color: avgDiff >= 0 ? "var(--color-active-badge)" : "#d04040" }}>
+                  {avgDiff >= 0 ? "↑" : "↓"} {Math.abs(avgDiff).toFixed(1)} avg vs prior
+                </span>
+              )}
             </div>
-            {avgDiff !== undefined && (
-              <span style={{ fontWeight: 600, fontSize: 13, color: avgDiff >= 0 ? "var(--color-active-badge)" : "#d04040" }}>
-                {avgDiff >= 0 ? "↑" : "↓"} {Math.abs(avgDiff).toFixed(1)} avg vs prior
-              </span>
-            )}
+            <div style={{ fontSize: 13, color: "var(--color-text-muted)", fontStyle: "italic", marginBottom: "0.875rem" }}>
+              Over the past month, on average how often have you been:
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
+              {WBS_QUESTIONS.map((q) => (
+                <ScoreRow
+                  key={q.key}
+                  value={latest[q.key]}
+                  prior={prior?.[q.key]}
+                  bold={q.bold}
+                  rest={q.rest}
+                  gaugeSize={72}
+                />
+              ))}
+            </div>
           </div>
-          <div style={{ display: "flex", gap: "2rem" }}>
-            {latest.satisfied !== undefined && (
-              <div style={{ textAlign: "center" }}>
-                <GaugeArc value={latest.satisfied} label="Satisfied" size={90} />
-                {prior?.satisfied !== undefined && (
-                  <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 2 }}>
-                    {latest.satisfied > prior.satisfied ? "+" : ""}{latest.satisfied - prior.satisfied} from prior
-                  </div>
-                )}
-              </div>
-            )}
-            {latest.involved !== undefined && (
-              <div style={{ textAlign: "center" }}>
-                <GaugeArc value={latest.involved} label="Involved" size={90} />
-                {prior?.involved !== undefined && (
-                  <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 2 }}>
-                    {latest.involved > prior.involved ? "+" : ""}{latest.involved - prior.involved} from prior
-                  </div>
-                )}
-              </div>
-            )}
-            {latest.functioning !== undefined && (
-              <div style={{ textAlign: "center" }}>
-                <GaugeArc value={latest.functioning} label="Functioning" size={90} />
-                {prior?.functioning !== undefined && (
-                  <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 2 }}>
-                    {latest.functioning > prior.functioning ? "+" : ""}{latest.functioning - prior.functioning} from prior
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Assessment history */}
       {observations.length > 0 && (
@@ -329,7 +378,7 @@ export function WbsTab() {
             }}
           >
             {observations.map((obs, i) => (
-              <HistoryRow key={obs.date} obs={obs} isFirst={i === 0} />
+              <HistoryRow key={obs.date} obs={obs} prior={observations[i + 1]} isFirst={i === 0} />
             ))}
           </div>
         </div>

@@ -258,29 +258,6 @@ export function HealthRecordsTab() {
 
   return (
     <div style={{ padding: "1rem 1.25rem", display: "flex", flexDirection: "column", gap: "1.25rem", maxWidth: 1100 }}>
-      {/* Live data banner */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0.625rem 0.875rem",
-          background: "var(--color-bg-blue-highlight)",
-          borderRadius: "var(--radius-md)",
-          border: "1px solid var(--color-tag-blue-bg)",
-          fontSize: 13,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-          <span style={{ color: "var(--color-accent-blue)" }}>ℹ</span>
-          <span style={{ color: "var(--color-accent-blue)", fontWeight: 600 }}>Live EHR data.</span>
-          <span style={{ color: "var(--color-text-muted)" }}>
-            {[goalsSupported && "Goals", conditionsSupported && "Conditions", medicationsSupported && "Medications"]
-              .filter(Boolean)
-              .join(", ")} queried from the EHR and shown most-recent first. Read-only view.
-          </span>
-        </div>
-      </div>
 
       {/* Clinical Goals */}
       {goalsSupported && <div
