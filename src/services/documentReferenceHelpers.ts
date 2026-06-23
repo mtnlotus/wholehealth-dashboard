@@ -1,6 +1,6 @@
 import type { fhirR4 } from "@smile-cdr/fhirts";
 import type Client from "fhirclient/lib/Client";
-import { readAttachment, readTextContent } from "../lib/docxReaderBrowser";
+import { readAttachment, readHtmlContent, readTextContent } from "../lib/docxReaderBrowser";
 import { fhirRequest } from "../lib/fhirRequest";
 
 export interface NoteMetadata {
@@ -80,7 +80,7 @@ export async function fetchNoteContent(
   // URL-referenced content — check local cache first, then fetch via FHIR client
   if (attachment.url) {
     const cached = binaryCache?.[attachment.url];
-    if (cached !== undefined) return readTextContent(cached);
+    if (cached !== undefined) return contentType.includes("html") ? readHtmlContent(cached) : readTextContent(cached);
     if (!client) throw new Error("FHIR client required to fetch URL-referenced content");
     if (isDocx(contentType)) {
       const buffer = await fhirRequest<ArrayBuffer>(client, attachment.url);
@@ -88,6 +88,7 @@ export async function fetchNoteContent(
     }
     const response = await fhirRequest<string | { data?: string }>(client, attachment.url);
     const text = typeof response === "string" ? response : response.data ? atob(response.data) : "";
+    if (contentType.includes("html")) return readHtmlContent(text);
     return readTextContent(text);
   }
 

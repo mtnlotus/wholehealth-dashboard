@@ -59,6 +59,27 @@ export function readTextContent(text: string): string[] {
   return text.split(/\r?\n/).map((line) => line.trim());
 }
 
+/**
+ * Extract plain-text lines from Epic's HTML note format.
+ * Each <div data-paragraph="N"> maps to one line; text is extracted from
+ * nested <span> elements. Falls back to innerText splitting when no
+ * data-paragraph divs are found.
+ */
+export function readHtmlContent(html: string): string[] {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const paragraphDivs = doc.querySelectorAll("div[data-paragraph]");
+  if (paragraphDivs.length > 0) {
+    return Array.from(paragraphDivs).map((div) =>
+      // Replace non-breaking spaces, collapse whitespace, trim
+      (div.textContent ?? "").replace(/ /g, " ").replace(/\s+/g, " ").trim(),
+    );
+  }
+  // Fallback: treat each line of innerText as a paragraph
+  return (doc.body.innerText ?? doc.body.textContent ?? "")
+    .split(/\r?\n/)
+    .map((line) => line.trim());
+}
+
 export async function readFileInput(file: File): Promise<string[]> {
   if (file.name.endsWith(".docx")) {
     return readDocxBuffer(await file.arrayBuffer());
@@ -76,5 +97,6 @@ export async function readAttachment(
     return readDocxBuffer(buffer);
   }
   const text = typeof data === "string" ? data : new TextDecoder().decode(data);
+  if (contentType.includes("html")) return readHtmlContent(text);
   return readTextContent(text);
 }
