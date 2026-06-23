@@ -14,11 +14,18 @@ interface AppState {
   standaloneDocRefs: fhirR4.DocumentReference[];
   // Binary URL → decoded text, populated when loading a sample bundle
   binaryCache: Record<string, string>;
+  // DocumentReferences uploaded manually by the user (all launch modes)
+  uploadedDocRefs: fhirR4.DocumentReference[];
+  // IDs of notes that have already been auto-parsed (persists across tab navigation)
+  autoProcessedNoteIds: Set<string>;
   setLaunchMode: (mode: LaunchMode) => void;
   setSmartClient: (client: Client) => void;
   setPhpData: (data: PhpData) => void;
   setFhirBundle: (bundle: fhirR4.Bundle) => void;
   setStandaloneBundle: (refs: fhirR4.DocumentReference[], cache: Record<string, string>) => void;
+  addUploadedDocRefs: (refs: fhirR4.DocumentReference[]) => void;
+  removeUploadedDocRef: (id: string) => void;
+  markNotesAutoProcessed: (ids: string[]) => void;
   selectedNoteIds: Set<string>;
   setSelectedNoteIds: (ids: Set<string>) => void;
   /** Clear only the derived health plan data; preserves session and EHR state. */
@@ -33,6 +40,8 @@ export const useAppStore = create<AppState>((set) => ({
   fhirBundle: null,
   standaloneDocRefs: [],
   binaryCache: {},
+  uploadedDocRefs: [],
+  autoProcessedNoteIds: new Set(),
   selectedNoteIds: new Set(),
   setSelectedNoteIds: (ids) => set({ selectedNoteIds: ids }),
   setLaunchMode: (mode) => set({ launchMode: mode }),
@@ -40,6 +49,15 @@ export const useAppStore = create<AppState>((set) => ({
   setPhpData: (data) => set({ phpData: data }),
   setFhirBundle: (bundle) => set({ fhirBundle: bundle }),
   setStandaloneBundle: (refs, cache) => set({ standaloneDocRefs: refs, binaryCache: cache }),
+  addUploadedDocRefs: (refs) =>
+    set((s) => ({ uploadedDocRefs: [...s.uploadedDocRefs, ...refs] })),
+  removeUploadedDocRef: (id) =>
+    set((s) => ({
+      uploadedDocRefs: s.uploadedDocRefs.filter((r) => r.id !== id),
+      selectedNoteIds: new Set([...s.selectedNoteIds].filter((sid) => sid !== id)),
+    })),
+  markNotesAutoProcessed: (ids) =>
+    set((s) => ({ autoProcessedNoteIds: new Set([...s.autoProcessedNoteIds, ...ids]) })),
   clearPlan: () => set({ phpData: null, fhirBundle: null, selectedNoteIds: new Set() }),
   reset: () =>
     set({
@@ -49,6 +67,8 @@ export const useAppStore = create<AppState>((set) => ({
       fhirBundle: null,
       standaloneDocRefs: [],
       binaryCache: {},
+      uploadedDocRefs: [],
+      autoProcessedNoteIds: new Set(),
       selectedNoteIds: new Set(),
     }),
 }));

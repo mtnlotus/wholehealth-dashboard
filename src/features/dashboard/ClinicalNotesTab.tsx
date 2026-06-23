@@ -1,27 +1,39 @@
 import type { fhirR4 } from "@smile-cdr/fhirts";
-import { useMemo, useState } from "react";
+import { useRef, useMemo, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
 import { EmptyState } from "../../components/EmptyState";
 import { useBinaryContent } from "../../hooks/useBinaryContent";
 import { useDocumentReferences } from "../../hooks/useDocumentReferences";
 import { useSmartClient } from "../../hooks/useSmartClient";
 import { fhirRequest } from "../../lib/fhirRequest";
+import { filesToDocumentReferences } from "../../lib/uploadedNoteHelpers";
 import { processNotes } from "../../lib/noteProcessingPipeline";
 import {
   extractNoteMetadata,
+  fetchMostRecentEncounterRef,
   fetchNoteContent,
   selectAttachment,
 } from "../../services/documentReferenceHelpers";
 import { useAppStore } from "../../store/appStore";
+import { useSmartScopes } from "../../hooks/useSmartScopes";
+import { useQueryClient } from "@tanstack/react-query";
 import { FileUploadFallback } from "../notes/FileUploadFallback";
 import { SampleBundleLoader } from "../notes/SampleBundleLoader";
 
-// Note type from FHIR DocumentReference.type
 const NOTE_TYPES = ["All Types", "Progress Note", "Consult Note", "Discharge Summary"] as const;
 type NoteTypeFilter = (typeof NOTE_TYPES)[number];
 
 function getNoteType(dr: fhirR4.DocumentReference): string {
   return dr.type?.text ?? dr.type?.coding?.[0]?.display ?? "Note";
+}
+
+// LOINC codes for note types that should be auto-selected and parsed into the health plan
+const HEALTH_COACHING_NOTE_CODES = [
+  "96340-5", // Integrative medicine Note
+];
+
+function isHealthCoachingNote(dr: fhirR4.DocumentReference): boolean {
+  return (dr.type?.coding ?? []).some((c) => c.code && HEALTH_COACHING_NOTE_CODES.includes(c.code));
 }
 
 function matchesTypeFilter(dr: fhirR4.DocumentReference, filter: NoteTypeFilter): boolean {
@@ -34,6 +46,7 @@ const TYPE_BADGE_COLORS: Record<string, { bg: string; color: string; border: str
   "Progress Note": { bg: "#e8f5e9", color: "#2e7d32", border: "#a5d6a7" },
   "Consult Note": { bg: "var(--color-bg-blue-highlight)", color: "var(--color-accent-blue)", border: "var(--color-tag-blue-bg)" },
   "Discharge Summary": { bg: "var(--color-tag-amber-bg)", color: "#7a4400", border: "#f5c77e" },
+  "Integrative medicine Note": { bg: "#f3e8ff", color: "#6b21a8", border: "#d8b4fe" },
 };
 
 function TypeBadge({ type }: { type: string }) {
@@ -61,10 +74,7 @@ function TypeBadge({ type }: { type: string }) {
 }
 
 function getAuthor(dr: fhirR4.DocumentReference): string {
-  const display = dr.author?.[0]?.display;
-  if (display) return display;
-  // Fallback: last-name-first "Family, Given" → "Given Family"
-  return "";
+  return dr.author?.[0]?.display ?? "";
 }
 
 function toPdfDataUri(binaryString: string): string | null {
@@ -73,6 +83,241 @@ function toPdfDataUri(binaryString: string): string | null {
   } catch {
     return null;
   }
+}
+
+const thStyle: React.CSSProperties = {
+  padding: "0.5rem 0.75rem",
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: "0.06em",
+  textTransform: "uppercase",
+  color: "var(--color-text-muted)",
+  textAlign: "left",
+  borderBottom: "1px solid var(--color-border)",
+};
+
+function NotesTable({
+  notes,
+  selectedIds,
+  toggleNote,
+  fhirVisible,
+  setFhirVisible,
+  binary,
+  pdfLoading,
+  setPdfLoading,
+  client,
+  onRemove,
+}: {
+  notes: fhirR4.DocumentReference[];
+  selectedIds: Set<string>;
+  toggleNote: (id: string) => void;
+  fhirVisible: Set<string>;
+  setFhirVisible: React.Dispatch<React.SetStateAction<Set<string>>>;
+  binary: ReturnType<typeof useBinaryContent>;
+  pdfLoading: Record<string, boolean>;
+  setPdfLoading: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  client: ReturnType<typeof useSmartClient>;
+  onRemove?: (id: string) => void;
+}) {
+  const colSpan = onRemove ? 8 : 7;
+  return (
+    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <thead>
+        <tr style={{ background: "var(--color-bg)" }}>
+          <th style={{ width: 36, padding: "0.5rem 0.75rem", borderBottom: "1px solid var(--color-border)" }} />
+          <th style={thStyle}>Date</th>
+          <th style={thStyle}>Type</th>
+          <th style={thStyle}>Subject / Preview</th>
+          <th style={thStyle}>Author</th>
+          <th style={thStyle}>Content</th>
+          <th style={thStyle}>FHIR Data</th>
+          {onRemove && <th style={thStyle} />}
+        </tr>
+      </thead>
+      <tbody>
+        {notes.map((dr, i) => {
+          const meta = extractNoteMetadata(dr);
+          const id = dr.id ?? "";
+          const checked = selectedIds.has(id);
+          const att = selectAttachment(dr);
+          const attachUrl = att?.url;
+          const embeddedKey = att?.data ? `embedded:${id || i}` : undefined;
+          const contentKey = attachUrl ?? embeddedKey;
+          const isViewVisible = contentKey ? binary.isVisible(contentKey) : false;
+          const isFhirVisible = fhirVisible.has(id);
+          const noteType = getNoteType(dr);
+
+          return (
+            <>
+              <tr
+                key={id}
+                style={{
+                  borderBottom: "1px solid var(--color-border-light)",
+                  background: checked ? "var(--color-bg-highlight)" : i % 2 === 0 ? "var(--color-bg-card)" : "var(--color-bg)",
+                  verticalAlign: "middle",
+                }}
+              >
+                <td style={{ padding: "0.5rem 0.75rem" }}>
+                  <input
+                    type="checkbox"
+                    id={`note-${id}`}
+                    checked={checked}
+                    onChange={() => toggleNote(id)}
+                    style={{ width: 16, height: 16, cursor: "pointer", accentColor: "var(--color-primary)" }}
+                  />
+                </td>
+                <td style={{ padding: "0.5rem 0.75rem", fontSize: 13, color: "var(--color-text-muted)", whiteSpace: "nowrap" }}>
+                  {meta.date ?? "—"}
+                </td>
+                <td style={{ padding: "0.5rem 0.75rem" }}>
+                  <TypeBadge type={noteType} />
+                </td>
+                <td style={{ padding: "0.5rem 0.75rem" }}>
+                  <label htmlFor={`note-${id}`} style={{ cursor: "pointer" }}>
+                    <div style={{ fontWeight: checked ? 600 : 400, fontSize: 13 }}>{meta.title}</div>
+                  </label>
+                </td>
+                <td style={{ padding: "0.5rem 0.75rem", fontSize: 13, color: "var(--color-text-muted)", whiteSpace: "nowrap" }}>
+                  {getAuthor(dr) || "—"}
+                </td>
+                <td style={{ padding: "0.5rem 0.75rem" }}>
+                  {contentKey && (
+                    <button
+                      type="button"
+                      style={{
+                        fontSize: 12,
+                        padding: "3px 10px",
+                        cursor: "pointer",
+                        background: isViewVisible ? "var(--color-bg-highlight)" : "var(--color-bg-card-warm)",
+                        border: "1px solid var(--color-border)",
+                        borderRadius: 99,
+                        color: "var(--color-text-muted)",
+                      }}
+                      onClick={() => binary.toggle(contentKey, client, att?.data)}
+                      disabled={binary.loading[contentKey]}
+                    >
+                      {binary.loading[contentKey] ? "Loading…" : isViewVisible ? "Hide" : "Show"}
+                    </button>
+                  )}
+                </td>
+                <td style={{ padding: "0.5rem 0.75rem" }}>
+                  <button
+                    type="button"
+                    style={{
+                      fontSize: 12,
+                      padding: "3px 10px",
+                      cursor: "pointer",
+                      background: isFhirVisible ? "var(--color-bg-highlight)" : "var(--color-bg-card-warm)",
+                      border: "1px solid var(--color-border)",
+                      borderRadius: 99,
+                      color: "var(--color-text-muted)",
+                    }}
+                    onClick={() =>
+                      setFhirVisible((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(id)) next.delete(id);
+                        else next.add(id);
+                        return next;
+                      })
+                    }
+                  >
+                    {isFhirVisible ? "Hide" : "Show"}
+                  </button>
+                </td>
+                {onRemove && (
+                  <td style={{ padding: "0.5rem 0.75rem" }}>
+                    <button
+                      type="button"
+                      onClick={() => onRemove(id)}
+                      title="Remove uploaded note"
+                      style={{
+                        fontSize: 12,
+                        padding: "3px 10px",
+                        cursor: "pointer",
+                        background: "transparent",
+                        border: "1px solid var(--color-border)",
+                        borderRadius: 99,
+                        color: "var(--color-text-muted)",
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </td>
+                )}
+              </tr>
+
+              {isFhirVisible && (
+                <tr key={`${id}-fhir`}>
+                  <td colSpan={colSpan} style={{ padding: "0.5rem 1rem 1rem", background: "#fafafa" }}>
+                    <pre style={{ margin: 0, fontSize: 12, whiteSpace: "pre-wrap", wordBreak: "break-word", maxHeight: 400, overflow: "auto", background: "#fff", border: "1px solid var(--color-border)", padding: "0.75rem", borderRadius: "var(--radius-md)" }}>
+                      {JSON.stringify(dr, null, 2)}
+                    </pre>
+                  </td>
+                </tr>
+              )}
+
+              {contentKey && isViewVisible && (
+                <tr key={`${id}-content`}>
+                  <td colSpan={colSpan} style={{ padding: "0.5rem 1rem 1rem", background: "#fafafa" }}>
+                    {binary.errors[contentKey] ? (
+                      <span style={{ color: "#d04040", fontSize: 12 }}>{binary.errors[contentKey]}</span>
+                    ) : att?.contentType?.startsWith("text/html") ? (
+                      <iframe
+                        srcDoc={binary.content[contentKey] ?? ""}
+                        sandbox=""
+                        title={meta.title}
+                        style={{ width: "100%", height: 400, border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)", background: "#fff", display: "block" }}
+                      />
+                    ) : att?.contentType?.startsWith("application/pdf") ? (
+                      (() => {
+                        const src = toPdfDataUri(binary.content[contentKey] ?? "");
+                        const isRendering = pdfLoading[contentKey] !== false;
+                        return src ? (
+                          <div style={{ position: "relative", height: 500 }}>
+                            {isRendering && (
+                              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "#fafafa", border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)", color: "var(--color-text-muted)", fontSize: 13, zIndex: 1 }}>
+                                Rendering PDF…
+                              </div>
+                            )}
+                            <iframe
+                              src={src}
+                              title={meta.title}
+                              onLoad={() => setPdfLoading((p) => ({ ...p, [contentKey]: false }))}
+                              style={{ width: "100%", height: 500, border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)", background: "#fff", display: "block", visibility: isRendering ? "hidden" : "visible" }}
+                            />
+                          </div>
+                        ) : (
+                          <span style={{ color: "#d04040", fontSize: 12 }}>Unable to render PDF.</span>
+                        );
+                      })()
+                    ) : (
+                      <pre style={{ margin: 0, fontSize: 12, whiteSpace: "pre-wrap", wordBreak: "break-word", maxHeight: 300, overflow: "auto", background: "#fff", border: "1px solid var(--color-border)", padding: "0.75rem", borderRadius: "var(--radius-md)" }}>
+                        {binary.content[contentKey] ?? ""}
+                      </pre>
+                    )}
+                  </td>
+                </tr>
+              )}
+            </>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+function SectionLabel({ label, count, badge }: { label: string; count: number; badge?: "amber" }) {
+  const badgeBg = badge === "amber" ? "#fff3cd" : "var(--color-bg)";
+  const badgeColor = badge === "amber" ? "#7a4400" : "var(--color-text-muted)";
+  const badgeBorder = badge === "amber" ? "#f5c77e" : "var(--color-border)";
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.625rem 0.875rem", background: "var(--color-bg-card-warm)", borderBottom: "1px solid var(--color-border-light)" }}>
+      <span style={{ fontWeight: 700, fontSize: 13 }}>{label}</span>
+      <span style={{ padding: "1px 7px", borderRadius: 99, background: badgeBg, border: `1px solid ${badgeBorder}`, fontSize: 11, fontWeight: 600, color: badgeColor }}>
+        {count}
+      </span>
+    </div>
+  );
 }
 
 export function ClinicalNotesTab() {
@@ -86,6 +331,11 @@ export function ClinicalNotesTab() {
   const launchMode = useAppStore((s) => s.launchMode);
   const standaloneDocRefs = useAppStore((s) => s.standaloneDocRefs);
   const binaryCache = useAppStore((s) => s.binaryCache);
+  const uploadedDocRefs = useAppStore((s) => s.uploadedDocRefs);
+  const addUploadedDocRefs = useAppStore((s) => s.addUploadedDocRefs);
+  const removeUploadedDocRef = useAppStore((s) => s.removeUploadedDocRef);
+  const autoProcessedNoteIds = useAppStore((s) => s.autoProcessedNoteIds);
+  const markNotesAutoProcessed = useAppStore((s) => s.markNotesAutoProcessed);
   const navigate = useNavigate();
 
   const selectedIds = useAppStore((s) => s.selectedNoteIds);
@@ -96,13 +346,24 @@ export function ClinicalNotesTab() {
   const [pdfLoading, setPdfLoading] = useState<Record<string, boolean>>({});
   const [typeFilter, setTypeFilter] = useState<NoteTypeFilter>("All Types");
   const [search, setSearch] = useState("");
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [posting, setPosting] = useState(false);
+  const [postError, setPostError] = useState<string | null>(null);
 
+  const { hasWriteScope } = useSmartScopes();
+  const queryClient = useQueryClient();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const binary = useBinaryContent();
   const isSmartMode = launchMode === "smart" || launchMode === "patient";
-  const allNotes: fhirR4.DocumentReference[] = isSmartMode ? (ehrNotes ?? []) : standaloneDocRefs;
+  const canPostToEhr = isSmartMode && hasWriteScope("DocumentReference");
+  const ehrSourceNotes: fhirR4.DocumentReference[] = isSmartMode ? (ehrNotes ?? []) : standaloneDocRefs;
 
-  const notes = useMemo(() => {
-    return allNotes.filter((dr) => {
+  // All notes pool for selection/parsing
+  const allNotes = useMemo(() => [...ehrSourceNotes, ...uploadedDocRefs], [ehrSourceNotes, uploadedDocRefs]);
+
+  const filteredEhrNotes = useMemo(() => {
+    return ehrSourceNotes.filter((dr) => {
       if (!matchesTypeFilter(dr, typeFilter)) return false;
       if (search.trim()) {
         const meta = extractNoteMetadata(dr);
@@ -111,7 +372,18 @@ export function ClinicalNotesTab() {
       }
       return true;
     });
-  }, [allNotes, typeFilter, search]);
+  }, [ehrSourceNotes, typeFilter, search]);
+
+  const filteredUploadedNotes = useMemo(() => {
+    return uploadedDocRefs.filter((dr) => {
+      if (search.trim()) {
+        const meta = extractNoteMetadata(dr);
+        const q = search.toLowerCase();
+        return meta.title.toLowerCase().includes(q) || (meta.date ?? "").includes(q);
+      }
+      return true;
+    });
+  }, [uploadedDocRefs, search]);
 
   function toggleNote(id: string) {
     const next = new Set(selectedIds);
@@ -120,16 +392,35 @@ export function ClinicalNotesTab() {
     setSelectedIds(next);
   }
 
-  async function handleParseSelected() {
-    if (selectedIds.size === 0) return;
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setUploadError(null);
+    const { refs, errors } = await filesToDocumentReferences(files);
+    if (refs.length > 0) {
+      const refsWithSubject = patientId
+        ? refs.map((r) => ({ ...r, subject: { reference: `Patient/${patientId}` } }))
+        : refs;
+      addUploadedDocRefs(refsWithSubject);
+      // Auto-select all newly uploaded refs
+      const next = new Set(selectedIds);
+      for (const r of refsWithSubject) if (r.id) next.add(r.id);
+      setSelectedIds(next);
+    }
+    if (errors.length > 0) setUploadError(errors.join("; "));
+    // Reset input so the same file can be re-uploaded if needed
+    e.target.value = "";
+  }
+
+  const parseNotes = useCallback(async (notes: fhirR4.DocumentReference[]) => {
+    if (notes.length === 0) return;
     setParsing(true);
     setParseError(null);
     try {
-      const selectedNotes = allNotes.filter((dr) => selectedIds.has(dr.id ?? ""));
       const paragraphSets = await Promise.all(
-        selectedNotes.map((dr) => fetchNoteContent(dr, client, binaryCache)),
+        notes.map((dr) => fetchNoteContent(dr, client, binaryCache)),
       );
-      const noteDates = selectedNotes.map((dr) => {
+      const noteDates = notes.map((dr) => {
         const raw = dr.context?.period?.start ?? dr.date ?? dr.content?.[0]?.attachment?.creation;
         return raw ? String(raw).slice(0, 10) : undefined;
       });
@@ -160,7 +451,86 @@ export function ClinicalNotesTab() {
     } finally {
       setParsing(false);
     }
+  }, [client, patientId, binaryCache, setPhpData, setFhirBundle, navigate]);
+
+  function handleParseSelected() {
+    const selectedNotes = allNotes.filter((dr) => selectedIds.has(dr.id ?? ""));
+    parseNotes(selectedNotes);
   }
+
+  async function handlePostToEhr() {
+    if (!client) return;
+    const toPost = uploadedDocRefs.filter((dr) => selectedIds.has(dr.id ?? ""));
+    if (toPost.length === 0) return;
+    setPosting(true);
+    setPostError(null);
+    const encounterRef = patientId ? await fetchMostRecentEncounterRef(client, patientId) : undefined;
+    const fhirUser = client.getFhirUser();
+    console.log("[PostToEHR] encounterRef:", encounterRef, "fhirUser:", fhirUser);
+    const failed: string[] = [];
+    const succeededIds: string[] = [];
+    for (const dr of toPost) {
+      // Strip synthetic id so the server assigns a real one; set docStatus final
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id: _id, ...rest } = dr;
+      const body: fhirR4.DocumentReference = {
+        ...rest,
+        // Epic accepts a limited set of note types; map to Progress Note for EHR posting
+        type: { coding: [{ system: "http://loinc.org", code: "11506-3", display: "Progress note" }], text: "Progress note" },
+        description: "Health and Wellness Coaching",
+        docStatus: "final" as fhirR4.DocumentReference.DocStatusEnum,
+        ...(fhirUser && { author: [{ reference: fhirUser }] }),
+        ...(encounterRef || rest.date
+          ? {
+              context: {
+                ...rest.context,
+                ...(encounterRef && { encounter: [{ reference: encounterRef }] }),
+                ...(rest.date && { period: { start: String(rest.date) } }),
+              },
+            }
+          : {}),
+      };
+      console.log("[PostToEHR] body:", JSON.stringify(body));
+      try {
+        await fhirRequest(client, "DocumentReference", {
+          method: "POST",
+          headers: { "Content-Type": "application/fhir+json" },
+          body: JSON.stringify(body),
+        });
+        if (dr.id) succeededIds.push(dr.id);
+      } catch (err) {
+        console.error("[PostToEHR] error:", err);
+        const meta = extractNoteMetadata(dr);
+        failed.push(`${meta.title}: ${String(err)}`);
+      }
+    }
+    if (succeededIds.length > 0) {
+      // Remove successfully posted notes from uploaded section and deselect them
+      for (const id of succeededIds) removeUploadedDocRef(id);
+      const next = new Set(selectedIds);
+      for (const id of succeededIds) next.delete(id);
+      setSelectedIds(next);
+      // Refresh EHR DocumentReference query
+      await queryClient.invalidateQueries({ queryKey: ["documentReferences", patientId] });
+    }
+    if (failed.length > 0) setPostError(failed.join("; "));
+    setPosting(false);
+  }
+
+  // Auto-select and parse health coaching notes as they appear (EHR or uploaded)
+  useEffect(() => {
+    const coachingNotes = allNotes.filter(isHealthCoachingNote);
+    const newNotes = coachingNotes.filter((n) => n.id && !autoProcessedNoteIds.has(n.id));
+    if (newNotes.length === 0) return;
+
+    markNotesAutoProcessed(newNotes.map((n) => n.id!));
+
+    const next = new Set(selectedIds);
+    for (const n of coachingNotes) if (n.id) next.add(n.id);
+    setSelectedIds(next);
+
+    parseNotes(coachingNotes);
+  }, [allNotes, autoProcessedNoteIds, markNotesAutoProcessed, parseNotes, selectedIds, setSelectedIds]);
 
   if (isSmartMode && isLoading) {
     return (
@@ -178,9 +548,11 @@ export function ClinicalNotesTab() {
     );
   }
 
+  const tableProps = { selectedIds, toggleNote, fhirVisible, setFhirVisible, binary, pdfLoading, setPdfLoading, client };
+
   return (
     <div style={{ padding: "1rem 1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-      {/* Search + filters */}
+      {/* Toolbar: search + type filters + upload button */}
       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
         <input
           type="search"
@@ -218,11 +590,46 @@ export function ClinicalNotesTab() {
           </button>
         ))}
         <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--color-text-muted)" }}>
-          {allNotes.length} note{allNotes.length !== 1 ? "s" : ""}
+          {ehrSourceNotes.length} EHR note{ehrSourceNotes.length !== 1 ? "s" : ""}
         </span>
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".txt,.docx,.json"
+          multiple
+          style={{ display: "none" }}
+          onChange={handleUpload}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          style={{
+            padding: "5px 14px",
+            borderRadius: 99,
+            border: "1px solid var(--color-border)",
+            background: "var(--color-bg-card)",
+            color: "var(--color-primary)",
+            fontWeight: 600,
+            fontSize: 12,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.3rem",
+          }}
+        >
+          ↑ Upload Notes
+        </button>
       </div>
 
-      {/* Parse action bar (when items selected) */}
+      {/* Upload error */}
+      {uploadError && (
+        <div style={{ fontSize: 12, color: "#d04040", padding: "0.5rem 0.75rem", background: "#fff5f5", borderRadius: "var(--radius-md)", border: "1px solid #fca5a5" }}>
+          {uploadError}
+        </div>
+      )}
+
+      {/* Parse action bar */}
       {selectedIds.size > 0 && (
         <div
           style={{
@@ -241,10 +648,7 @@ export function ClinicalNotesTab() {
           {parseError && <span style={{ fontSize: 12, color: "#d04040" }}>{parseError}</span>}
           <button
             type="button"
-            onClick={() => {
-              setSelectedIds(new Set());
-              clearPlan();
-            }}
+            onClick={() => { setSelectedIds(new Set()); clearPlan(); }}
             style={{
               padding: "5px 14px",
               borderRadius: 99,
@@ -282,192 +686,89 @@ export function ClinicalNotesTab() {
         </div>
       )}
 
-      {/* Notes table */}
-      {notes.length === 0 ? (
-        <EmptyState
-          message={
-            allNotes.length === 0
-              ? "No clinical notes found for this patient."
-              : "No notes match the current filter."
-          }
-          detail={
-            !isSmartMode
-              ? "Load a FHIR Bundle below to browse notes, or upload notes manually."
-              : undefined
-          }
-        />
-      ) : (
+      {/* EHR Notes section */}
+      <div
+        style={{
+          background: "var(--color-bg-card)",
+          borderRadius: "var(--radius-lg)",
+          border: "1px solid var(--color-border-light)",
+          overflow: "hidden",
+          boxShadow: "var(--shadow-card)",
+        }}
+      >
+        <SectionLabel label="EHR Notes" count={filteredEhrNotes.length} />
+        {filteredEhrNotes.length === 0 ? (
+          <div style={{ padding: "1.5rem" }}>
+            <EmptyState
+              message={
+                ehrSourceNotes.length === 0
+                  ? "No clinical notes found for this patient."
+                  : "No notes match the current filter."
+              }
+              detail={
+                !isSmartMode
+                  ? "Load a FHIR Bundle below to browse notes, or upload notes manually."
+                  : undefined
+              }
+            />
+          </div>
+        ) : (
+          <NotesTable notes={filteredEhrNotes} {...tableProps} />
+        )}
+      </div>
+
+      {/* Uploaded Notes section */}
+      {(uploadedDocRefs.length > 0 || uploadError) && (
         <div
           style={{
             background: "var(--color-bg-card)",
             borderRadius: "var(--radius-lg)",
-            border: "1px solid var(--color-border-light)",
+            border: "1px solid #f5c77e",
             overflow: "hidden",
             boxShadow: "var(--shadow-card)",
           }}
         >
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ background: "var(--color-bg)" }}>
-                <th style={{ width: 36, padding: "0.5rem 0.75rem", borderBottom: "1px solid var(--color-border)" }} />
-                <th style={{ padding: "0.5rem 0.75rem", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-text-muted)", textAlign: "left", borderBottom: "1px solid var(--color-border)" }}>Date</th>
-                <th style={{ padding: "0.5rem 0.75rem", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-text-muted)", textAlign: "left", borderBottom: "1px solid var(--color-border)" }}>Type</th>
-                <th style={{ padding: "0.5rem 0.75rem", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-text-muted)", textAlign: "left", borderBottom: "1px solid var(--color-border)" }}>Subject / Preview</th>
-                <th style={{ padding: "0.5rem 0.75rem", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-text-muted)", textAlign: "left", borderBottom: "1px solid var(--color-border)" }}>Author</th>
-                <th style={{ padding: "0.5rem 0.75rem", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-text-muted)", textAlign: "left", borderBottom: "1px solid var(--color-border)" }}>Content</th>
-                <th style={{ padding: "0.5rem 0.75rem", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-text-muted)", textAlign: "left", borderBottom: "1px solid var(--color-border)" }}>FHIR Data</th>
-              </tr>
-            </thead>
-            <tbody>
-              {notes.map((dr, i) => {
-                const meta = extractNoteMetadata(dr);
-                const id = dr.id ?? "";
-                const checked = selectedIds.has(id);
-                const att = selectAttachment(dr);
-                const attachUrl = att?.url;
-                // Use id when available; fall back to row index so inline-data rows always get a key
-                const embeddedKey = att?.data ? `embedded:${id || i}` : undefined;
-                const contentKey = attachUrl ?? embeddedKey;
-                const isViewVisible = contentKey ? binary.isVisible(contentKey) : false;
-                const isFhirVisible = fhirVisible.has(id);
-                const noteType = getNoteType(dr);
-
-                return (
-                  <>
-                    <tr
-                      key={id}
-                      style={{
-                        borderBottom: "1px solid var(--color-border-light)",
-                        background: checked ? "var(--color-bg-highlight)" : i % 2 === 0 ? "var(--color-bg-card)" : "var(--color-bg)",
-                        verticalAlign: "middle",
-                      }}
-                    >
-                      <td style={{ padding: "0.5rem 0.75rem" }}>
-                        <input
-                          type="checkbox"
-                          id={`note-${id}`}
-                          checked={checked}
-                          onChange={() => toggleNote(id)}
-                          style={{ width: 16, height: 16, cursor: "pointer", accentColor: "var(--color-primary)" }}
-                        />
-                      </td>
-                      <td style={{ padding: "0.5rem 0.75rem", fontSize: 13, color: "var(--color-text-muted)", whiteSpace: "nowrap" }}>
-                        {meta.date ?? "—"}
-                      </td>
-                      <td style={{ padding: "0.5rem 0.75rem" }}>
-                        <TypeBadge type={noteType} />
-                      </td>
-                      <td style={{ padding: "0.5rem 0.75rem" }}>
-                        <label htmlFor={`note-${id}`} style={{ cursor: "pointer" }}>
-                          <div style={{ fontWeight: checked ? 600 : 400, fontSize: 13 }}>{meta.title}</div>
-                        </label>
-                      </td>
-                      <td style={{ padding: "0.5rem 0.75rem", fontSize: 13, color: "var(--color-text-muted)", whiteSpace: "nowrap" }}>
-                        {getAuthor(dr) || "—"}
-                      </td>
-                      <td style={{ padding: "0.5rem 0.75rem" }}>
-                        {contentKey && (
-                          <button
-                            type="button"
-                            style={{
-                              fontSize: 12,
-                              padding: "3px 10px",
-                              cursor: "pointer",
-                              background: isViewVisible ? "var(--color-bg-highlight)" : "var(--color-bg-card-warm)",
-                              border: "1px solid var(--color-border)",
-                              borderRadius: 99,
-                              color: "var(--color-text-muted)",
-                            }}
-                            onClick={() => binary.toggle(contentKey, client, att?.data)}
-                            disabled={binary.loading[contentKey]}
-                          >
-                            {binary.loading[contentKey] ? "Loading…" : isViewVisible ? "Hide" : "Show"}
-                          </button>
-                        )}
-                      </td>
-                      <td style={{ padding: "0.5rem 0.75rem" }}>
-                        <button
-                          type="button"
-                          style={{
-                            fontSize: 12,
-                            padding: "3px 10px",
-                            cursor: "pointer",
-                            background: isFhirVisible ? "var(--color-bg-highlight)" : "var(--color-bg-card-warm)",
-                            border: "1px solid var(--color-border)",
-                            borderRadius: 99,
-                            color: "var(--color-text-muted)",
-                          }}
-                          onClick={() =>
-                            setFhirVisible((prev) => {
-                              const next = new Set(prev);
-                              if (next.has(id)) next.delete(id);
-                              else next.add(id);
-                              return next;
-                            })
-                          }
-                        >
-                          {isFhirVisible ? "Hide" : "Show"}
-                        </button>
-                      </td>
-                    </tr>
-
-                    {isFhirVisible && (
-                      <tr key={`${id}-fhir`}>
-                        <td colSpan={7} style={{ padding: "0.5rem 1rem 1rem", background: "#fafafa" }}>
-                          <pre style={{ margin: 0, fontSize: 12, whiteSpace: "pre-wrap", wordBreak: "break-word", maxHeight: 400, overflow: "auto", background: "#fff", border: "1px solid var(--color-border)", padding: "0.75rem", borderRadius: "var(--radius-md)" }}>
-                            {JSON.stringify(dr, null, 2)}
-                          </pre>
-                        </td>
-                      </tr>
-                    )}
-
-                    {contentKey && isViewVisible && (
-                      <tr key={`${id}-content`}>
-                        <td colSpan={7} style={{ padding: "0.5rem 1rem 1rem", background: "#fafafa" }}>
-                          {binary.errors[contentKey] ? (
-                            <span style={{ color: "#d04040", fontSize: 12 }}>{binary.errors[contentKey]}</span>
-                          ) : att?.contentType?.startsWith("text/html") ? (
-                            <iframe
-                              srcDoc={binary.content[contentKey] ?? ""}
-                              sandbox=""
-                              title={meta.title}
-                              style={{ width: "100%", height: 400, border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)", background: "#fff", display: "block" }}
-                            />
-                          ) : att?.contentType?.startsWith("application/pdf") ? (
-                            (() => {
-                              const src = toPdfDataUri(binary.content[contentKey] ?? "");
-                              const isRendering = pdfLoading[contentKey] !== false;
-                              return src ? (
-                                <div style={{ position: "relative", height: 500 }}>
-                                  {isRendering && (
-                                    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "#fafafa", border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)", color: "var(--color-text-muted)", fontSize: 13, zIndex: 1 }}>
-                                      Rendering PDF…
-                                    </div>
-                                  )}
-                                  <iframe
-                                    src={src}
-                                    title={meta.title}
-                                    onLoad={() => setPdfLoading((p) => ({ ...p, [contentKey]: false }))}
-                                    style={{ width: "100%", height: 500, border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)", background: "#fff", display: "block", visibility: isRendering ? "hidden" : "visible" }}
-                                  />
-                                </div>
-                              ) : (
-                                <span style={{ color: "#d04040", fontSize: 12 }}>Unable to render PDF.</span>
-                              );
-                            })()
-                          ) : (
-                            <pre style={{ margin: 0, fontSize: 12, whiteSpace: "pre-wrap", wordBreak: "break-word", maxHeight: 300, overflow: "auto", background: "#fff", border: "1px solid var(--color-border)", padding: "0.75rem", borderRadius: "var(--radius-md)" }}>
-                              {binary.content[contentKey] ?? ""}
-                            </pre>
-                          )}
-                        </td>
-                      </tr>
-                    )}
-                  </>
-                );
-              })}
-            </tbody>
-          </table>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.625rem 0.875rem", background: "var(--color-bg-card-warm)", borderBottom: "1px solid var(--color-border-light)" }}>
+            <span style={{ fontWeight: 700, fontSize: 13 }}>Uploaded Notes</span>
+            <span style={{ padding: "1px 7px", borderRadius: 99, background: "#fff3cd", border: "1px solid #f5c77e", fontSize: 11, fontWeight: 600, color: "#7a4400" }}>
+              {filteredUploadedNotes.length}
+            </span>
+            {canPostToEhr && uploadedDocRefs.some((dr) => selectedIds.has(dr.id ?? "")) && (
+              <button
+                type="button"
+                onClick={handlePostToEhr}
+                disabled={posting}
+                style={{
+                  marginLeft: "0.5rem",
+                  padding: "3px 12px",
+                  borderRadius: 99,
+                  background: posting ? "var(--color-bg)" : "var(--color-accent-blue)",
+                  color: posting ? "var(--color-text-muted)" : "#fff",
+                  border: "none",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: posting ? "not-allowed" : "pointer",
+                  opacity: posting ? 0.7 : 1,
+                }}
+              >
+                {posting ? "Posting…" : "↑ Post to EHR"}
+              </button>
+            )}
+            {postError && (
+              <span style={{ fontSize: 11, color: "#d04040", marginLeft: "0.25rem" }}>{postError}</span>
+            )}
+          </div>
+          {filteredUploadedNotes.length === 0 ? (
+            <div style={{ padding: "1.5rem" }}>
+              <EmptyState message="No uploaded notes match the current search." />
+            </div>
+          ) : (
+            <NotesTable
+              notes={filteredUploadedNotes}
+              {...tableProps}
+              onRemove={removeUploadedDocRef}
+            />
+          )}
         </div>
       )}
 

@@ -1,5 +1,8 @@
-export const DEFAULT_SMART_SCOPE =
+export const DEFAULT_PATIENT_SMART_SCOPE =
   "launch openid fhirUser patient/Patient.read patient/DocumentReference.read patient/Binary.read patient/Goal.read patient/Condition.read patient/MedicationRequest.read";
+
+export const DEFAULT_PRACTITIONER_SMART_SCOPE =
+  "launch openid fhirUser user/Patient.read user/DocumentReference.read user/DocumentReference.write user/Binary.read user/Goal.read user/Condition.read user/MedicationRequest.read user/Encounter.read";
 
 export type AppType = "patient" | "practitioner";
 
@@ -37,7 +40,7 @@ export const FHIR_SERVERS: FhirServerConfig[] = [
     // scope:
     //   "launch openid profile fhirUser user/Patient.read user/Practitioner.read user/DocumentReference.read user/Binary.read user/Condition.read user/MedicationRequest.read",
     scope:
-      "launch openid profile fhirUser user/Patient.read user/Practitioner.read user/Condition.read user/MedicationRequest.read",
+      "launch openid profile fhirUser user/Patient.read user/Condition.read user/MedicationRequest.read",
     authFlow: "backend",
     appType: "practitioner",
     label: "VA Sandbox (Practitioner)",
@@ -114,9 +117,13 @@ export function clientSecretForIss(iss: string, appType?: AppType): string | und
   return findServer(iss, appType)?.clientSecret;
 }
 
-/** Return the SMART scope for a given ISS, falling back to DEFAULT_SMART_SCOPE. */
+/** Return the SMART scope for a given ISS, falling back to the appropriate default for the appType. */
 export function scopeForIss(iss: string, appType?: AppType): string {
-  return findServer(iss, appType)?.scope ?? DEFAULT_SMART_SCOPE;
+  const server = findServer(iss, appType);
+  if (server?.scope) return server.scope;
+  return (appType ?? server?.appType ?? "practitioner") === "patient"
+    ? DEFAULT_PATIENT_SMART_SCOPE
+    : DEFAULT_PRACTITIONER_SMART_SCOPE;
 }
 
 /**

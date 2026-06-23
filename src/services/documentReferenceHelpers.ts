@@ -94,6 +94,35 @@ export async function fetchNoteContent(
   return [];
 }
 
+/**
+ * Query for the most recent Encounter for a patient and return a FHIR reference string,
+ * e.g. "Encounter/abc123". Returns undefined if none found or query fails.
+ * Used to populate DocumentReference.context.encounter before posting, which is required
+ * by some EHRs (e.g. Epic).
+ */
+export async function fetchMostRecentEncounterRef(
+  client: Client,
+  patientId: string,
+): Promise<string | undefined> {
+  try {
+    const bundle = await fhirRequest<{
+      entry?: Array<{ resource?: { resourceType: string; id?: string; period?: { start?: string }; date?: string } }>;
+    }>(client, `Encounter?patient=${patientId}`);
+    console.log("[fetchMostRecentEncounterRef] bundle:", JSON.stringify(bundle).slice(0, 1000));
+    const encounters = (bundle.entry ?? [])
+      .map((e) => e.resource)
+      .filter((r): r is NonNullable<typeof r> => !!r && r.resourceType === "Encounter");
+    encounters.sort((a, b) =>
+      String(b.period?.start ?? b.date ?? "").localeCompare(String(a.period?.start ?? a.date ?? "")),
+    );
+    const enc = encounters[0];
+    if (enc?.id) return `Encounter/${enc.id}`;
+  } catch {
+    // Ignore — posting without encounter context is attempted as fallback
+  }
+  return undefined;
+}
+
 /** Fetch a Binary resource by URL and return its text content. */
 export async function fetchBinaryText(url: string, client: Client): Promise<string> {
   const response = await fhirRequest<string | { data?: string }>(client, url);

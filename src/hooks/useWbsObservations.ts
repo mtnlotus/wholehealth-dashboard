@@ -71,13 +71,19 @@ export function useWbsObservations(patientId: string | undefined) {
     queryFn: async (): Promise<WbsObservation[]> => {
       const bundle = await fhirRequest<FhirSearchBundle>(
         client!,
-        `Observation?patient=${patientId}&code=${WBS_SYSTEM}|${WBS_PANEL_CODE}&_sort=-date`,
+        `Observation?patient=${patientId}&category=survey`,
       );
       return (bundle.entry ?? [])
         .map((e) => e.resource)
-        .filter((r): r is fhirR4.Observation => !!r)
+        .filter(
+          (r): r is fhirR4.Observation =>
+            !!r &&
+            r.resourceType === "Observation" &&
+            (r.code?.coding ?? []).some((c) => c.system === WBS_SYSTEM && c.code === WBS_PANEL_CODE),
+        )
         .map(toWbsObs)
-        .filter((o) => o.date);
+        .filter((o) => o.date)
+        .sort((a, b) => b.date.localeCompare(a.date));
     },
     staleTime: 5 * 60 * 1000,
   });

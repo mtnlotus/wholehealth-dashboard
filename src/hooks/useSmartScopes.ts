@@ -22,7 +22,11 @@ export function useSmartScopes() {
 
     // No auth context → treat everything as allowed
     if (!scopeStr) {
-      return { hasResourceScope: (_resourceType: string) => true, scopes: [] };
+      return {
+        hasResourceScope: (_resourceType: string) => true,
+        hasWriteScope: (_resourceType: string) => true,
+        scopes: [],
+      };
     }
 
     const scopes = scopeStr.split(/\s+/).filter(Boolean);
@@ -38,6 +42,19 @@ export function useSmartScopes() {
       return false;
     }
 
-    return { hasResourceScope, scopes };
+    // Check write/create permission: operation part must be "*", "write", "crus", "cu", or "c"
+    const WRITE_OPS = new Set(["*", "write", "crus", "cu", "c", "cru"]);
+    function hasWriteScope(resourceType: string): boolean {
+      for (const scope of scopes) {
+        const match = scope.match(/^(?:patient|user|system)\/([^.]+)\.(.+)$/);
+        if (!match) continue;
+        const resource = match[1];
+        const op = match[2];
+        if ((resource === "*" || resource === resourceType) && WRITE_OPS.has(op)) return true;
+      }
+      return false;
+    }
+
+    return { hasResourceScope, hasWriteScope, scopes };
   }, [client]);
 }

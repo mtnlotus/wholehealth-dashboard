@@ -6,6 +6,8 @@ const FHIR_HEADERS = { Accept: "application/json+fhir" };
 export function fhirRequest<T>(client: Client, url: string, options?: RequestInit): Promise<T> {
   return client.request<T>({
     url,
+    method: options?.method,
+    body: options?.body,
     headers: { ...FHIR_HEADERS, ...options?.headers },
   });
 }
