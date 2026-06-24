@@ -20,28 +20,44 @@ export interface FhirServerConfig {
    * Set to "none" for public PKCE clients that have no secret and no registered public key.
    */
   clientAuthMethod?: "secret" | "jwt" | "none";
+  /**
+   * Override the `aud` claim in the JWT client assertion. Use when the authorization server
+   * sits behind an API gateway and requires its own URL as the audience rather than the
+   * gateway token endpoint (e.g. VA Lighthouse → Okta).
+   */
+  tokenAudience?: string;
+  /**
+   * Override the token endpoint URL for the POST request, bypassing SMART discovery.
+   * Use when the EHR's Backend Services token endpoint differs from what .well-known returns
+   * (e.g. VA Lighthouse system token endpoint vs the standard FHIR OAuth endpoint).
+   */
+  tokenEndpointOverride?: string;
   /** Defaults to "practitioner" if omitted. */
   appType?: AppType;
 }
 
+const VA_SCOPE = "launch patient/Patient.read patient/DocumentReference.read patient/Binary.read patient/Condition.read patient/MedicationRequest.read patient/Medication.read"
+
 export const FHIR_SERVERS: FhirServerConfig[] = [
   {
     iss: "https://sandbox-api.va.gov/services/fhir/v0/r4",
-    clientId: "0oa1b48zszuAMvJhd2p8",
-    clientSecret: "REDACTED-ROTATED-SECRET",
-    scope:
-      "launch/patient openid profile fhirUser patient/Patient.read patient/DocumentReference.read patient/Binary.read patient/Condition.read patient/MedicationRequest.read",
+    // clientId: "0oa1b48zszuAMvJhd2p8",
+    // clientSecret: "REDACTED-ROTATED-SECRET",
+    clientId: "0oa1c1nratlBFWaRS2p8",
+    scope: VA_SCOPE,
+    // clientAuthMethod: "jwt",
+    tokenAudience: "https://deptva-eval.okta.com/oauth2/aus8nm1q0f7VQ0a482p7/v1/token",
+    tokenEndpointOverride: "https://sandbox-api.va.gov/oauth2/health/system/v1/token",
     appType: "patient",
     label: "VA Sandbox",
   },
   {
     iss: "https://sandbox-api.va.gov/services/fhir/v0/r4",
-    clientId: "0oa1bc9ry2soVnuT02p8",
-    // scope:
-    //   "launch openid profile fhirUser user/Patient.read user/Practitioner.read user/DocumentReference.read user/Binary.read user/Condition.read user/MedicationRequest.read",
-    scope:
-      "launch openid profile fhirUser user/Patient.read user/Condition.read user/MedicationRequest.read",
+    clientId: "0oa1c1nratlBFWaRS2p8",
+    scope: VA_SCOPE,
     authFlow: "backend",
+    tokenAudience: "https://deptva-eval.okta.com/oauth2/aus8nm1q0f7VQ0a482p7/v1/token",
+    tokenEndpointOverride: "https://sandbox-api.va.gov/oauth2/health/system/v1/token",
     appType: "practitioner",
     label: "VA Sandbox (Practitioner)",
   },
@@ -154,6 +170,16 @@ export function clientAuthMethodForIss(iss: string, appType?: AppType): "secret"
   if (server?.clientSecret) return "secret";
   if (server && import.meta.env.VITE_SMART_PRIVATE_KEY_JWK) return "jwt";
   return "none";
+}
+
+/** Return the JWT client assertion audience for a given ISS, falling back to the token endpoint. */
+export function tokenAudienceForIss(iss: string, appType?: AppType): string | undefined {
+  return findServer(iss, appType)?.tokenAudience;
+}
+
+/** Return the token endpoint override for a given ISS, bypassing SMART discovery when set. */
+export function tokenEndpointOverrideForIss(iss: string, appType?: AppType): string | undefined {
+  return findServer(iss, appType)?.tokenEndpointOverride;
 }
 
 /**

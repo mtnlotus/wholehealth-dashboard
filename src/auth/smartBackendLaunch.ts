@@ -1,7 +1,7 @@
 import FHIR from "fhirclient";
 import type Client from "fhirclient/lib/Client";
 import { type JWK, SignJWT, importJWK } from "jose";
-import { type AppType, clientIdForIss, clientSecretForIss, scopeForIss } from "../config/fhirServers";
+import { type AppType, clientIdForIss, clientSecretForIss, scopeForIss, tokenAudienceForIss, tokenEndpointOverrideForIss } from "../config/fhirServers";
 
 interface SmartConfiguration {
   token_endpoint: string;
@@ -28,6 +28,7 @@ async function discoverTokenEndpoint(iss: string): Promise<string> {
 export async function buildClientAssertion(
   clientId: string,
   tokenEndpoint: string,
+  audienceOverride?: string,
 ): Promise<string> {
   const jwk = JSON.parse(import.meta.env.VITE_SMART_PRIVATE_KEY_JWK) as JWK;
   const alg = jwk.alg ?? "ES384";
@@ -38,7 +39,7 @@ export async function buildClientAssertion(
     .setProtectedHeader(header)
     .setIssuer(clientId)
     .setSubject(clientId)
-    .setAudience(tokenEndpoint)
+    .setAudience(audienceOverride ?? tokenEndpoint)
     .setJti(crypto.randomUUID())
     .setIssuedAt()
     .setExpirationTime("5m")
@@ -63,7 +64,9 @@ export async function smartBackendLaunch(
   const clientId = clientIdForIss(iss, appType);
   const clientSecret = clientSecretForIss(iss, appType);
   const clientScope = scopeForIss(iss, appType);
-  const tokenEndpoint = await discoverTokenEndpoint(iss);
+  const tokenAudience = tokenAudienceForIss(iss, appType);
+  const tokenEndpointOverride = tokenEndpointOverrideForIss(iss, appType);
+  const tokenEndpoint = tokenEndpointOverride ?? await discoverTokenEndpoint(iss);
 
   const launchPatient = patientIdHint ? `{"patient":"${patientIdHint}"}` : "";
   const launchPatientEncoded = launchPatient ? btoa(launchPatient) : "";
@@ -79,12 +82,15 @@ export async function smartBackendLaunch(
     : new URLSearchParams({
         grant_type: "client_credentials",
         client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
-        client_assertion: await buildClientAssertion(clientId, tokenEndpoint),
+        client_assertion: await buildClientAssertion(clientId, tokenEndpoint, tokenAudience),
         scope: clientScope,
         launch: launchPatientEncoded,
       });
 
-  console.log("Requesting SMART token with body:", Object.fromEntries(body.entries()));
+  console.log("[smartBackendLaunch] iss:", iss, "appType:", appType);
+  console.log("[smartBackendLaunch] tokenEndpoint:", tokenEndpoint);
+  console.log("[smartBackendLaunch] tokenAudience override:", tokenAudience ?? "(none — using tokenEndpoint as aud)");
+  console.log("[smartBackendLaunch] body:", Object.fromEntries(body.entries()));
 
   const res = await fetch(tokenEndpoint, {
     method: "POST",

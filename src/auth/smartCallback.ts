@@ -1,7 +1,12 @@
 import FHIR from "fhirclient";
 import type Client from "fhirclient/lib/Client";
-import { clientAuthMethodForClientId } from "../config/fhirServers";
+import { clientAuthMethodForClientId, FHIR_SERVERS } from "../config/fhirServers";
 import { buildClientAssertion } from "./smartBackendLaunch";
+
+function findServerByClientId(iss: string, clientId: string) {
+  const normalized = iss.replace(/\/$/, "");
+  return FHIR_SERVERS.find((s) => s.iss === normalized && s.clientId === clientId);
+}
 
 // fhirclient stores state with mixed conventions — handle both forms defensively
 interface StoredSmartState {
@@ -50,7 +55,14 @@ async function jwtCodeExchange(state: StoredSmartState): Promise<Client> {
   if (!tokenUri) throw new Error("No tokenUri in stored SMART state — cannot build JWT audience");
   if (!clientId) throw new Error("No clientId in stored SMART state");
 
-  const assertion = await buildClientAssertion(clientId, tokenUri);
+  const serverConfig = findServerByClientId(serverUrl, clientId);
+  const effectiveTokenEndpoint = serverConfig?.tokenEndpointOverride ?? tokenUri;
+  const audienceOverride = serverConfig?.tokenAudience;
+
+  console.log("[smartCallback] effectiveTokenEndpoint:", effectiveTokenEndpoint);
+  console.log("[smartCallback] audienceOverride:", audienceOverride ?? "(none — using tokenUri as aud)");
+
+  const assertion = await buildClientAssertion(clientId, effectiveTokenEndpoint, audienceOverride);
 
   const body = new URLSearchParams({
     grant_type: "authorization_code",
@@ -64,7 +76,7 @@ async function jwtCodeExchange(state: StoredSmartState): Promise<Client> {
 
   console.log("[smartCallback] token request body:", Object.fromEntries(body.entries()));
 
-  const res = await fetch(tokenUri, {
+  const res = await fetch(effectiveTokenEndpoint, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: body.toString(),
@@ -83,14 +95,18 @@ async function jwtCodeExchange(state: StoredSmartState): Promise<Client> {
 export async function smartCallback(): Promise<Client> {
   // fhirclient stores auth state in sessionStorage under the `state` URL param.
   const urlState = new URLSearchParams(window.location.search).get("state");
+  console.log("[smartCallback] urlState:", urlState, "| sessionStorage keys:", Object.keys(sessionStorage));
   if (urlState) {
     const stored = sessionStorage.getItem(urlState);
+    console.log("[smartCallback] stored state found:", !!stored);
     if (stored) {
       const state = JSON.parse(stored) as StoredSmartState;
-      console.log("[smartCallback] stored SMART state keys:", Object.keys(state));
       const serverUrl = state.serverUrl ?? "";
       const clientId = state.clientId ?? (state.client_id as string | undefined) ?? "";
-      if (serverUrl && clientAuthMethodForClientId(serverUrl, clientId) === "jwt") {
+      const authMethod = clientAuthMethodForClientId(serverUrl, clientId);
+      console.log("[smartCallback] stored SMART state keys:", Object.keys(state));
+      console.log("[smartCallback] serverUrl:", serverUrl, "clientId:", clientId, "authMethod:", authMethod);
+      if (serverUrl && authMethod === "jwt") {
         return jwtCodeExchange(state);
       }
     }
