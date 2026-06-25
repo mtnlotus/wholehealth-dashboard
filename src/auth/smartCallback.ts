@@ -1,11 +1,13 @@
 import FHIR from "fhirclient";
 import type Client from "fhirclient/lib/Client";
-import { clientAuthMethodForClientId, FHIR_SERVERS } from "../config/fhirServers";
+import { clientAuthMethodForClientId, FHIR_SERVERS, CREDENTIALS } from "../config/fhirServers";
 import { buildClientAssertion } from "./smartBackendLaunch";
 
 function findServerByClientId(iss: string, clientId: string) {
   const normalized = iss.replace(/\/$/, "");
-  return FHIR_SERVERS.find((s) => s.iss === normalized && s.clientId === clientId);
+  return FHIR_SERVERS.find(
+    (s) => s.iss === normalized && CREDENTIALS[s.credentialKey]?.clientId === clientId,
+  );
 }
 
 // fhirclient stores state with mixed conventions — handle both forms defensively

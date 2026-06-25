@@ -22,7 +22,7 @@ function loadCredentials(): Record<string, FhirCredentials> {
   }
 }
 
-const CREDENTIALS = loadCredentials();
+export const CREDENTIALS = loadCredentials();
 
 export interface FhirServerConfig {
   iss: string;
