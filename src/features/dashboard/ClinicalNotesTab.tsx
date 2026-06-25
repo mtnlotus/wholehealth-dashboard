@@ -491,7 +491,7 @@ export function ClinicalNotesTab() {
               context: {
                 ...rest.context,
                 ...(encounterRef && { encounter: [{ reference: encounterRef }] }),
-                ...(rest.date && { period: { start: String(rest.date) } }),
+                ...(rest.date && { period: { start: String(rest.date), end: String(rest.date) } }),
               },
             }
           : {}),
