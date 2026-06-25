@@ -41,13 +41,9 @@ const VA_SCOPE = "launch patient/Patient.read patient/DocumentReference.read pat
 export const FHIR_SERVERS: FhirServerConfig[] = [
   {
     iss: "https://sandbox-api.va.gov/services/fhir/v0/r4",
-    clientId: "0oa1b48zszuAMvJhd2p8",
+    clientId: "0oa1c33l89xPdNQG72p8",
     clientSecret: "REDACTED-ROTATED-SECRET",
-    // clientId: "0oa1c1nratlBFWaRS2p8",
     scope: VA_SCOPE,
-    // clientAuthMethod: "jwt",
-    // tokenAudience: "https://deptva-eval.okta.com/oauth2/aus8nm1q0f7VQ0a482p7/v1/token",
-    // tokenEndpointOverride: "https://sandbox-api.va.gov/oauth2/health/system/v1/token",
     appType: "patient",
     label: "VA Sandbox",
   },
