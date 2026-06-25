@@ -6,11 +6,29 @@ export const DEFAULT_PRACTITIONER_SMART_SCOPE =
 
 export type AppType = "patient" | "practitioner";
 
+interface FhirCredentials {
+  clientId?: string;
+  clientSecret?: string;
+}
+
+function loadCredentials(): Record<string, FhirCredentials> {
+  const raw = import.meta.env.VITE_FHIR_CREDENTIALS;
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw) as Record<string, FhirCredentials>;
+  } catch {
+    console.warn("VITE_FHIR_CREDENTIALS is not valid JSON");
+    return {};
+  }
+}
+
+const CREDENTIALS = loadCredentials();
+
 export interface FhirServerConfig {
   iss: string;
-  clientId: string;
+  /** Key into VITE_FHIR_CREDENTIALS for clientId and clientSecret. */
+  credentialKey: string;
   label: string;
-  clientSecret?: string;
   scope?: string;
   /** Override the OAuth2 grant type for this server. Omit to use the global default. */
   authFlow?: "code" | "backend";
@@ -36,20 +54,20 @@ export interface FhirServerConfig {
   appType?: AppType;
 }
 
-const VA_SCOPE = "launch patient/Patient.read patient/DocumentReference.read patient/Binary.read patient/Condition.read patient/MedicationRequest.read patient/Medication.read"
+const VA_SCOPE =
+  "launch patient/Patient.read patient/DocumentReference.read patient/Binary.read patient/Condition.read patient/MedicationRequest.read patient/Medication.read";
 
 export const FHIR_SERVERS: FhirServerConfig[] = [
   {
     iss: "https://sandbox-api.va.gov/services/fhir/v0/r4",
-    clientId: "0oa1c33l89xPdNQG72p8",
-    clientSecret: "REDACTED-ROTATED-SECRET",
+    credentialKey: "va-patient",
     scope: VA_SCOPE,
     appType: "patient",
     label: "VA Sandbox",
   },
   {
     iss: "https://sandbox-api.va.gov/services/fhir/v0/r4",
-    clientId: "0oa1c1nratlBFWaRS2p8",
+    credentialKey: "va-practitioner",
     scope: VA_SCOPE,
     authFlow: "backend",
     tokenAudience: "https://deptva-eval.okta.com/oauth2/aus8nm1q0f7VQ0a482p7/v1/token",
@@ -60,8 +78,7 @@ export const FHIR_SERVERS: FhirServerConfig[] = [
 
   {
     iss: "https://fhir-myrecord.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d",
-    clientId: "c4b5bb81-cd2f-431b-8d50-066696a9e367",
-    clientSecret: "REDACTED-ROTATED-SECRET",
+    credentialKey: "oracle-patient",
     scope:
       "launch/patient openid profile fhirUser patient/Patient.read patient/DocumentReference.read patient/Binary.read patient/Goal.read patient/Condition.read patient/MedicationRequest.read",
     appType: "patient",
@@ -69,34 +86,33 @@ export const FHIR_SERVERS: FhirServerConfig[] = [
   },
   {
     iss: "https://fhir-ehr-code.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d",
-    clientId: "e5164fcc-f986-46ee-b923-9e21a92b88f9",
-    clientSecret: "REDACTED-ROTATED-SECRET",
+    credentialKey: "oracle-practitioner",
     appType: "practitioner",
     label: "Oracle Sandbox (Practitioner)",
   },
-  
+
   {
     iss: "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4",
-    clientId: "06f080fa-155c-40a9-b2bd-e4ccb9987b1a",
+    credentialKey: "epic-patient",
     appType: "patient",
     label: "Epic Sandbox",
   },
   {
     iss: "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4",
-    clientId: "79d0d7ce-949c-4b31-a962-9bc083a9197d",
+    credentialKey: "epic-practitioner",
     appType: "practitioner",
     label: "Epic Sandbox (Practitioner)",
   },
   {
     iss: "https://launch.smarthealthit.org/v/r4/sim/WzMsImQ1NTI1NDU5LThmM2UtNGU2MC04ZWQyLTUxNDBkMTY1ZGI3NSIsIjk2MzMzNjUyLWVkMjgtNDFkMy1iYjYwLWQ0MzVmNDc4YzhlZCIsIkFVVE8iLDEsMSwwLCIiLCIiLCIiLCIiLCIiLCIiLCIiLDAsMSwiIl0/fhir",
-    clientId: "anything",
+    credentialKey: "smarthealthit-patient",
     clientAuthMethod: "none",
     appType: "patient",
     label: "SMART Health IT Sandbox",
   },
   {
     iss: "https://launch.smarthealthit.org/v/r4/fhir",
-    clientId: "anything",
+    credentialKey: "smarthealthit-practitioner",
     clientAuthMethod: "none",
     appType: "practitioner",
     label: "SMART Health IT Sandbox (Practitioner)",
@@ -121,12 +137,15 @@ export function serversForAppType(appType: AppType): FhirServerConfig[] {
 
 /** Return the client ID for a given ISS, falling back to the env default. */
 export function clientIdForIss(iss: string, appType?: AppType): string {
-  return findServer(iss, appType)?.clientId ?? import.meta.env.VITE_SMART_CLIENT_ID;
+  const server = findServer(iss, appType);
+  return (server ? CREDENTIALS[server.credentialKey]?.clientId : undefined) ??
+    import.meta.env.VITE_SMART_CLIENT_ID;
 }
 
 /** Return the client secret for a given ISS, or undefined if not configured. */
 export function clientSecretForIss(iss: string, appType?: AppType): string | undefined {
-  return findServer(iss, appType)?.clientSecret;
+  const server = findServer(iss, appType);
+  return server ? CREDENTIALS[server.credentialKey]?.clientSecret : undefined;
 }
 
 /** Return the SMART scope for a given ISS, falling back to the appropriate default for the appType. */
@@ -163,7 +182,7 @@ export function authFlowForIss(iss: string, appType?: AppType): "code" | "backen
 export function clientAuthMethodForIss(iss: string, appType?: AppType): "secret" | "jwt" | "none" {
   const server = findServer(iss, appType);
   if (server?.clientAuthMethod) return server.clientAuthMethod;
-  if (server?.clientSecret) return "secret";
+  if (server && CREDENTIALS[server.credentialKey]?.clientSecret) return "secret";
   if (server && import.meta.env.VITE_SMART_PRIVATE_KEY_JWK) return "jwt";
   return "none";
 }
@@ -185,9 +204,11 @@ export function tokenEndpointOverrideForIss(iss: string, appType?: AppType): str
  */
 export function clientAuthMethodForClientId(iss: string, clientId: string): "secret" | "jwt" | "none" {
   const normalized = iss.replace(/\/$/, "");
-  const server = FHIR_SERVERS.find((s) => s.iss === normalized && s.clientId === clientId);
+  const server = FHIR_SERVERS.find(
+    (s) => s.iss === normalized && CREDENTIALS[s.credentialKey]?.clientId === clientId,
+  );
   if (server?.clientAuthMethod) return server.clientAuthMethod;
-  if (server?.clientSecret) return "secret";
+  if (server && CREDENTIALS[server.credentialKey]?.clientSecret) return "secret";
   if (server && import.meta.env.VITE_SMART_PRIVATE_KEY_JWK) return "jwt";
   return "none";
 }
