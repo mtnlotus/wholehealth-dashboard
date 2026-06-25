@@ -36,6 +36,12 @@ function isHealthCoachingNote(dr: fhirR4.DocumentReference): boolean {
   return (dr.type?.coding ?? []).some((c) => c.code && HEALTH_COACHING_NOTE_CODES.includes(c.code));
 }
 
+function isCoachingByText(dr: fhirR4.DocumentReference): boolean {
+  const lower = (s: string | undefined) => (s ?? "").toLowerCase();
+  if (lower(dr.description).includes("coaching")) return true;
+  return (dr.content ?? []).some((c) => lower(c.attachment?.title).includes("coaching"));
+}
+
 function matchesTypeFilter(dr: fhirR4.DocumentReference, filter: NoteTypeFilter): boolean {
   if (filter === "All Types") return true;
   const t = getNoteType(dr).toLowerCase();
@@ -517,9 +523,12 @@ export function ClinicalNotesTab() {
     setPosting(false);
   }
 
-  // Auto-select and parse health coaching notes as they appear (EHR or uploaded)
+  // Auto-select and parse health coaching notes as they appear (EHR or uploaded).
+  // Primary: match by LOINC code. Fallback: match by "coaching" in description or attachment title.
   useEffect(() => {
-    const coachingNotes = allNotes.filter(isHealthCoachingNote);
+    let coachingNotes = allNotes.filter(isHealthCoachingNote);
+    if (coachingNotes.length === 0) coachingNotes = allNotes.filter(isCoachingByText);
+
     const newNotes = coachingNotes.filter((n) => n.id && !autoProcessedNoteIds.has(n.id));
     if (newNotes.length === 0) return;
 
@@ -686,37 +695,6 @@ export function ClinicalNotesTab() {
         </div>
       )}
 
-      {/* EHR Notes section */}
-      <div
-        style={{
-          background: "var(--color-bg-card)",
-          borderRadius: "var(--radius-lg)",
-          border: "1px solid var(--color-border-light)",
-          overflow: "hidden",
-          boxShadow: "var(--shadow-card)",
-        }}
-      >
-        <SectionLabel label="EHR Notes" count={filteredEhrNotes.length} />
-        {filteredEhrNotes.length === 0 ? (
-          <div style={{ padding: "1.5rem" }}>
-            <EmptyState
-              message={
-                ehrSourceNotes.length === 0
-                  ? "No clinical notes found for this patient."
-                  : "No notes match the current filter."
-              }
-              detail={
-                !isSmartMode
-                  ? "Load a FHIR Bundle below to browse notes, or upload notes manually."
-                  : undefined
-              }
-            />
-          </div>
-        ) : (
-          <NotesTable notes={filteredEhrNotes} {...tableProps} />
-        )}
-      </div>
-
       {/* Uploaded Notes section */}
       {(uploadedDocRefs.length > 0 || uploadError) && (
         <div
@@ -771,6 +749,37 @@ export function ClinicalNotesTab() {
           )}
         </div>
       )}
+
+      {/* EHR Notes section */}
+      <div
+        style={{
+          background: "var(--color-bg-card)",
+          borderRadius: "var(--radius-lg)",
+          border: "1px solid var(--color-border-light)",
+          overflow: "hidden",
+          boxShadow: "var(--shadow-card)",
+        }}
+      >
+        <SectionLabel label="EHR Notes" count={filteredEhrNotes.length} />
+        {filteredEhrNotes.length === 0 ? (
+          <div style={{ padding: "1.5rem" }}>
+            <EmptyState
+              message={
+                ehrSourceNotes.length === 0
+                  ? "No clinical notes found for this patient."
+                  : "No notes match the current filter."
+              }
+              detail={
+                !isSmartMode
+                  ? "Load a FHIR Bundle below to browse notes, or upload notes manually."
+                  : undefined
+              }
+            />
+          </div>
+        ) : (
+          <NotesTable notes={filteredEhrNotes} {...tableProps} />
+        )}
+      </div>
 
       {/* Standalone dev tools */}
       {!isSmartMode && (

@@ -61,8 +61,8 @@ function makeDocRef(
         attachment: {
           contentType,
           data,
-          title: filename,
-          creation: noteDate,
+          title: "Health and Wellness Coaching",
+          creation: `${noteDate}T00:00:00.000Z`,
         },
       },
     ],
