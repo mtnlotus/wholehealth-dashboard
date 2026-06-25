@@ -117,7 +117,7 @@ async function processFile(file: File): Promise<fhirR4.DocumentReference[]> {
   const text = await file.text();
   const paragraphs = readTextContent(text);
   const noteDate = extractNoteDate(paragraphs);
-  return [makeDocRef(id, file.name, "text/plain", btoa(unescape(encodeURIComponent(text))), noteDate)];
+  return [makeDocRef(id, file.name, "text/plain;charset=utf-8", btoa(unescape(encodeURIComponent(text))), noteDate)];
 }
 
 export async function filesToDocumentReferences(
