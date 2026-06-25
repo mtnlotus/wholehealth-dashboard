@@ -41,13 +41,13 @@ const VA_SCOPE = "launch patient/Patient.read patient/DocumentReference.read pat
 export const FHIR_SERVERS: FhirServerConfig[] = [
   {
     iss: "https://sandbox-api.va.gov/services/fhir/v0/r4",
-    // clientId: "0oa1b48zszuAMvJhd2p8",
-    // clientSecret: "REDACTED-ROTATED-SECRET",
-    clientId: "0oa1c1nratlBFWaRS2p8",
+    clientId: "0oa1b48zszuAMvJhd2p8",
+    clientSecret: "REDACTED-ROTATED-SECRET",
+    // clientId: "0oa1c1nratlBFWaRS2p8",
     scope: VA_SCOPE,
     // clientAuthMethod: "jwt",
-    tokenAudience: "https://deptva-eval.okta.com/oauth2/aus8nm1q0f7VQ0a482p7/v1/token",
-    tokenEndpointOverride: "https://sandbox-api.va.gov/oauth2/health/system/v1/token",
+    // tokenAudience: "https://deptva-eval.okta.com/oauth2/aus8nm1q0f7VQ0a482p7/v1/token",
+    // tokenEndpointOverride: "https://sandbox-api.va.gov/oauth2/health/system/v1/token",
     appType: "patient",
     label: "VA Sandbox",
   },
@@ -92,7 +92,7 @@ export const FHIR_SERVERS: FhirServerConfig[] = [
     label: "Epic Sandbox (Practitioner)",
   },
   {
-    iss: "https://launch.smarthealthit.org/v/r4/fhir",
+    iss: "https://launch.smarthealthit.org/v/r4/sim/WzMsImQ1NTI1NDU5LThmM2UtNGU2MC04ZWQyLTUxNDBkMTY1ZGI3NSIsIjk2MzMzNjUyLWVkMjgtNDFkMy1iYjYwLWQ0MzVmNDc4YzhlZCIsIkFVVE8iLDEsMSwwLCIiLCIiLCIiLCIiLCIiLCIiLCIiLDAsMSwiIl0/fhir",
     clientId: "anything",
     clientAuthMethod: "none",
     appType: "patient",
