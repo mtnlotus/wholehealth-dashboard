@@ -16,8 +16,8 @@ const CONTENT_TYPE_PRIORITY = [
   "text/plain",
   "text/html",
   "text/rtf",
-  "application/xml",
   "application/pdf",
+  "application/xml",
 ];
 
 /**

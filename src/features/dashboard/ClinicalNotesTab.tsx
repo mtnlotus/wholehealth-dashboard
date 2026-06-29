@@ -381,14 +381,16 @@ export function ClinicalNotesTab() {
   }, [ehrSourceNotes, typeFilter, search]);
 
   const filteredUploadedNotes = useMemo(() => {
-    return uploadedDocRefs.filter((dr) => {
-      if (search.trim()) {
-        const meta = extractNoteMetadata(dr);
-        const q = search.toLowerCase();
-        return meta.title.toLowerCase().includes(q) || (meta.date ?? "").includes(q);
-      }
-      return true;
-    });
+    return uploadedDocRefs
+      .filter((dr) => {
+        if (search.trim()) {
+          const meta = extractNoteMetadata(dr);
+          const q = search.toLowerCase();
+          return meta.title.toLowerCase().includes(q) || (meta.date ?? "").includes(q);
+        }
+        return true;
+      })
+      .sort((a, b) => String(b.date ?? "").localeCompare(String(a.date ?? "")));
   }, [uploadedDocRefs, search]);
 
   function toggleNote(id: string) {
