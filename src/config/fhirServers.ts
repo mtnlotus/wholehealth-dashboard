@@ -55,20 +55,20 @@ export interface FhirServerConfig {
 }
 
 const VA_SCOPE =
-  "launch patient/Patient.read patient/DocumentReference.read patient/Binary.read patient/Condition.read patient/MedicationRequest.read patient/Medication.read";
+  "patient/Patient.read patient/DocumentReference.read patient/Binary.read patient/Condition.read patient/MedicationRequest.read patient/Medication.read patient/Encounter.read patient/Practitioner.read";
 
 export const FHIR_SERVERS: FhirServerConfig[] = [
   {
     iss: "https://sandbox-api.va.gov/services/fhir/v0/r4",
     credentialKey: "va-patient",
-    scope: VA_SCOPE,
+    scope: VA_SCOPE + " profile openid offline_access launch/patient fhirUser",
     appType: "patient",
     label: "VA Sandbox",
   },
   {
     iss: "https://sandbox-api.va.gov/services/fhir/v0/r4",
     credentialKey: "va-practitioner",
-    scope: VA_SCOPE,
+    scope: VA_SCOPE + " launch",
     authFlow: "backend",
     tokenAudience: "https://deptva-eval.okta.com/oauth2/aus8nm1q0f7VQ0a482p7/v1/token",
     tokenEndpointOverride: "https://sandbox-api.va.gov/oauth2/health/system/v1/token",
