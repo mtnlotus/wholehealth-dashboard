@@ -1,5 +1,6 @@
 import type { fhirR4 } from "@smile-cdr/fhirts";
 import { NoteParser } from "coach-notes";
+import { type EhrVendor, ehrVendorForIss } from "../config/fhirServers";
 import { readDocxBuffer, readTextContent } from "./docxReaderBrowser";
 
 const DOCX_CONTENT_TYPE =
@@ -69,7 +70,7 @@ function makeDocRef(
   };
 }
 
-async function processFile(file: File): Promise<fhirR4.DocumentReference[]> {
+async function processFile(file: File, vendor: EhrVendor): Promise<fhirR4.DocumentReference[]> {
   const id = syntheticId();
   const ext = file.name.split(".").pop()?.toLowerCase();
 
@@ -117,13 +118,21 @@ async function processFile(file: File): Promise<fhirR4.DocumentReference[]> {
   const text = await file.text();
   const paragraphs = readTextContent(text);
   const noteDate = extractNoteDate(paragraphs);
-  return [makeDocRef(id, file.name, "text/plain;charset=utf-8", btoa(unescape(encodeURIComponent(text))), noteDate)];
+  // Oracle/Cerner requires a charset param on the attachment contentType; Epic rejects it.
+  const contentType = vendor === "cerner" ? "text/plain;charset=utf-8" : "text/plain";
+  return [
+    makeDocRef(id, file.name, contentType, btoa(unescape(encodeURIComponent(text))), noteDate),
+  ];
 }
 
 export async function filesToDocumentReferences(
   files: FileList | File[],
+  iss: string | undefined,
 ): Promise<{ refs: fhirR4.DocumentReference[]; errors: string[] }> {
-  const results = await Promise.allSettled(Array.from(files).map(processFile));
+  const vendor = ehrVendorForIss(iss);
+  const results = await Promise.allSettled(
+    Array.from(files).map((file) => processFile(file, vendor)),
+  );
   const refs: fhirR4.DocumentReference[] = [];
   const errors: string[] = [];
   for (const r of results) {

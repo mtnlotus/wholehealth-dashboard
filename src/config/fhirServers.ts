@@ -1,10 +1,27 @@
 export const DEFAULT_PATIENT_SMART_SCOPE =
-  "launch openid fhirUser patient/Patient.read patient/DocumentReference.read patient/Binary.read patient/Goal.read patient/Condition.read patient/MedicationRequest.read";
+  "launch openid fhirUser patient/Patient.read patient/DocumentReference.read patient/Binary.read patient/Goal.read patient/Condition.read patient/MedicationRequest.read patient/Encounter.read";
+
+// export const DEFAULT_PRACTITIONER_SMART_SCOPE =
+//   "launch openid fhirUser user/Patient.read user/DocumentReference.read user/DocumentReference.write user/Binary.read user/Goal.read user/Condition.read user/MedicationRequest.read user/Encounter.read";
 
 export const DEFAULT_PRACTITIONER_SMART_SCOPE =
-  "launch openid fhirUser user/Patient.read user/DocumentReference.read user/DocumentReference.write user/Binary.read user/Goal.read user/Condition.read user/MedicationRequest.read user/Encounter.read";
+  "launch openid fhirUser patient/Patient.read patient/DocumentReference.read patient/DocumentReference.write patient/Binary.read patient/Goal.read patient/Condition.read patient/MedicationRequest.read patient/Encounter.read";
 
 export type AppType = "patient" | "practitioner";
+
+export type EhrVendor = "epic" | "cerner" | "other";
+
+/**
+ * Infer the EHR vendor from the launch `iss` so vendor-specific quirks can be worked
+ * around without a per-server config entry — e.g. Oracle/Cerner requires a `charset`
+ * parameter on DocumentReference attachment contentType, while Epic rejects it.
+ */
+export function ehrVendorForIss(iss: string | undefined): EhrVendor {
+  if (!iss) return "other";
+  if (/epic\.com/i.test(iss)) return "epic";
+  if (/cerner\.com/i.test(iss)) return "cerner";
+  return "other";
+}
 
 interface FhirCredentials {
   clientId?: string;
@@ -61,14 +78,14 @@ export const FHIR_SERVERS: FhirServerConfig[] = [
   {
     iss: "https://sandbox-api.va.gov/services/fhir/v0/r4",
     credentialKey: "va-patient",
-    scope: VA_SCOPE + " profile openid offline_access launch/patient fhirUser",
+    scope: `${VA_SCOPE} profile openid offline_access launch/patient fhirUser`,
     appType: "patient",
     label: "VA Sandbox",
   },
   {
     iss: "https://sandbox-api.va.gov/services/fhir/v0/r4",
     credentialKey: "va-practitioner",
-    scope: VA_SCOPE + " launch",
+    scope: `${VA_SCOPE} launch`,
     authFlow: "backend",
     tokenAudience: "https://deptva-eval.okta.com/oauth2/aus8nm1q0f7VQ0a482p7/v1/token",
     tokenEndpointOverride: "https://sandbox-api.va.gov/oauth2/health/system/v1/token",
@@ -95,6 +112,7 @@ export const FHIR_SERVERS: FhirServerConfig[] = [
     iss: "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4",
     credentialKey: "epic-patient",
     appType: "patient",
+    scope: `${DEFAULT_PATIENT_SMART_SCOPE} patient/DocumentReference.write`,
     label: "Epic Sandbox",
   },
   {

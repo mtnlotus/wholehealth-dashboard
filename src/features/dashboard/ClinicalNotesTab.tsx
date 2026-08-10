@@ -404,7 +404,7 @@ export function ClinicalNotesTab() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
     setUploadError(null);
-    const { refs, errors } = await filesToDocumentReferences(files);
+    const { refs, errors } = await filesToDocumentReferences(files, client?.state.serverUrl);
     if (refs.length > 0) {
       const refsWithSubject = patientId
         ? refs.map((r) => ({ ...r, subject: { reference: `Patient/${patientId}` } }))
