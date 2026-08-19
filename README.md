@@ -4,9 +4,9 @@ Your health and wellbeing improve when you have a clear understanding of your pe
 
 Whole Health Dashbard is a [SMART on FHIR](https://build.fhir.org/ig/HL7/smart-app-launch/) app for Health & Wellness
 Coaches and other care team members, embedded in EHR systems such as Epic or Oracle Health
-Millennium. It turns a coach's clinical notes into a Personal Health Plan and lets a patient
+Millennium. It turns a coach's progress notes into a **Personal Health Plan (PHP)** conforming to the 
+[Person-Centered Outcomes (PCO) FHIR IG](https://build.fhir.org/ig/HL7/pco-ig) and lets a patient
 leave with a verifiable [SMART Health Card](https://build.fhir.org/ig/HL7/smart-health-cards-and-links). 
-This dashboard app and a complimentary iOS mobile for individuals will read a Health & Wellness Coach's progress notes from text and convert them into a **Personal Health Plan (PHP)** conforming to the [Person-Centered Outcomes (PCO) FHIR IG](https://build.fhir.org/ig/HL7/pco-ig).
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for what's built and what's not.
 
